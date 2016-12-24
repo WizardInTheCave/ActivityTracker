@@ -10,8 +10,8 @@ public class LocationContentProviderContract {
 
     public static final String _ID = "_id";
     public static final String ALTITUDE = "Altitude";
-    public static final String LONGITUDE = "Body";
-    public static final String LATITUDE = "Title";
+    public static final String LONGITUDE = "Longitude";
+    public static final String LATITUDE = "Latitude";
 
 
     public static final String AUTHORITY = "com.example.jack.coursework4_activitytracker.LocationProvider";

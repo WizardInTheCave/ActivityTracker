@@ -13,12 +13,17 @@ import android.os.Bundle;
  * Created by Jack on 16/11/2016.
  */
 
-public class ALocationListener extends Activity implements LocationListener {
+public class ALocationListener implements LocationListener {
 
     double altitude;
     double latitude;
     double longitude;
 
+    Context serviceContext;
+
+    public ALocationListener(Context serviceContext){
+        this.serviceContext = serviceContext;
+    }
 
     /**
      * Send a broadcast to the LocationManagement Service containing all  the
@@ -34,7 +39,7 @@ public class ALocationListener extends Activity implements LocationListener {
         locationIntent.putExtra("Provider", location.getLongitude());
 
         locationIntent.setAction(LocationManagementService.RECEIVE_LOCATION);
-        getApplicationContext().sendBroadcast(locationIntent);
+        serviceContext.sendBroadcast(locationIntent);
     }
 
     @Override

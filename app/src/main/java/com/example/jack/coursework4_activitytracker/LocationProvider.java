@@ -67,7 +67,7 @@ public class LocationProvider extends ContentProvider {
         switch(uriMatcher.match(uri))
         {
             case 1:
-                return db.query("Recipes", tableColumns, whereCaluse, whereArgs, null, null, sortOrder);
+                return db.query("Locations", tableColumns, whereCaluse, whereArgs, null, null, sortOrder);
             default:
                 return null;
         }

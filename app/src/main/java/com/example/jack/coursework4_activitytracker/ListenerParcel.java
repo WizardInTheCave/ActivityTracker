@@ -1,5 +1,6 @@
 package com.example.jack.coursework4_activitytracker;
 
+import android.content.Context;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -10,9 +11,11 @@ import android.os.Parcelable;
 
 public class ListenerParcel implements Parcelable {
 
-    double altitude;
-    double latitude;
-    double longitude;
+    int isLogging;
+    Context context;
+//    double altitude;
+//    double latitude;
+//    double longitude;
 
     public ListenerParcel()
     {
@@ -39,9 +42,11 @@ public class ListenerParcel implements Parcelable {
     @Override
     public void writeToParcel(Parcel out, int flags)
     {
-        out.writeDouble(this.altitude);
-        out.writeDouble(this.latitude);
-        out.writeDouble(this.longitude);
+        out.writeInt(this.isLogging);
+
+//        out.writeDouble(this.altitude);
+//        out.writeDouble(this.latitude);
+//        out.writeDouble(this.longitude);
     }
 
     /**
@@ -50,9 +55,9 @@ public class ListenerParcel implements Parcelable {
      */
     private void readFromParcel(Parcel in)
     {
-        this.altitude = in.readDouble();
-        this.latitude = in.readDouble();
-        this.longitude = in.readDouble();
+        this.isLogging = in.readInt();
+//        this.latitude = in.readDouble();
+//        this.longitude = in.readDouble();
     }
 
     public static final Parcelable.Creator<ListenerParcel> CREATOR = new Parcelable.Creator<ListenerParcel>() {
