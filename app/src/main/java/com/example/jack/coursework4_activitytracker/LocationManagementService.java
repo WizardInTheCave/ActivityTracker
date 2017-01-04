@@ -26,41 +26,40 @@ public class LocationManagementService extends Service {
 
     private Messenger messenger;
 
-    public LocationManager locationManager;
-    public ALocationListener listener;
+    public LocationManager locationManager = null;
+    public ALocationListener listener = null;
     public Location previousBestLocation = null;
 
-    public static final String RECEIVE_LOCATION = "com.example.jack.coursework4_activitytracker.RECEIVE_TIME";
+    public static final String RECEIVE_LOCATION = "com.example.jack.coursework4_activitytracker.RECEIVE_LOCATION";
 
-    public static final int GET_ALL_POINTS = 1;
+
+    public static final int STOP_LOGGING = 1;
     public static final int START_LOGGING = 2;
     public static final int MY_PERMISSION_COURSE_LOCATION_REQ_CODE = 1;
 
-    boolean alreadyLogging = false;
-
-    double altitude;
-    double longitude;
-    double latitude;
+    boolean currentlyLogging = false;
 
     IntentFilter intentFilter;
-    MyReceiver receiver;
+    ServiceReceiver receiver;
 
-    class MyReceiver extends BroadcastReceiver {
+    class ServiceReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
 
             // get the latest values from the ALocationListener activity
-            altitude = intent.getDoubleExtra("Altitude", 0);
-            longitude = intent.getDoubleExtra("Longitude", 0);
-            latitude = intent.getDoubleExtra("Latitude", 0);
+            int _id = intent.getIntExtra("_id", 0);
+            double altitude = intent.getDoubleExtra("Altitude", 0);
+            double latitude = intent.getDoubleExtra("Latitude", 0);
+            double longitude = intent.getDoubleExtra("Longitude", 0);
 
             ContentValues newValues = new ContentValues();
 
+            newValues.put(LocationContentProviderContract._ID, _id);
             newValues.put(LocationContentProviderContract.ALTITUDE, altitude);
             newValues.put(LocationContentProviderContract.LONGITUDE, longitude);
             newValues.put(LocationContentProviderContract.LATITUDE, latitude);
 
-            getContentResolver().insert(LocationContentProviderContract.LOCATION_URI, newValues);
+            // getContentResolver().insert(LocationContentProviderContract.LOCATION_URI, newValues);
         }
     }
     @Override
@@ -68,7 +67,7 @@ public class LocationManagementService extends Service {
 
         messenger = new Messenger(new MyHandler());
 
-        receiver = new MyReceiver();
+        receiver = new ServiceReceiver();
         intentFilter = new IntentFilter();
         intentFilter.addAction(RECEIVE_LOCATION);
         registerReceiver(receiver, intentFilter);
@@ -84,9 +83,18 @@ public class LocationManagementService extends Service {
     private class MyHandler extends Handler {
         @Override
         public void handleMessage(Message message) {
+            Messenger replyto = message.replyTo;
+            Message reply = Message.obtain();
+
             switch (message.what) {
 
-                case GET_ALL_POINTS:
+                case STOP_LOGGING:
+
+                    // isLogging == 1 &&
+                    if(locationManager != null && listener != null){
+                        locationManager.removeUpdates(listener);
+                        currentlyLogging = false;
+                    }
 
                     break;
 
@@ -98,34 +106,26 @@ public class LocationManagementService extends Service {
                             && ContextCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
                         Bundle trackData = message.getData();
-                        ListenerParcel mp3Parcel = trackData.getParcelable("myParcel");
+                        ListenerParcel commandParcel = trackData.getParcelable("myParcel");
 
-                        int isLogging = mp3Parcel.isLogging;
-
-                        Messenger replyto = message.replyTo;
-                        Message reply = Message.obtain();
-
-                        if (isLogging == 1 && !alreadyLogging) {
-                            locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-                            listener = new ALocationListener(getApplicationContext());
-                            // try {
-                            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                                    5, // minimum time interval between updates
-                                    5, // minimum distance between updates, in metres
-                                    listener);
-                            alreadyLogging = true;
-                        }
-
-                        try {
-                            replyto.send(reply);
-                        } catch (RemoteException e) {
-                            e.printStackTrace();
-                        }
+                        // isLogging == 1 &&
+                        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                        listener = new ALocationListener(getApplicationContext());
+                        // try {
+                        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                                5, // minimum time interval between updates
+                                5, // minimum distance between updates, in metres
+                                listener);
+                        currentlyLogging = true;
                     }
-
                     break;
                 default:
                     super.handleMessage(message);
+            }
+            try {
+                replyto.send(reply);
+            } catch (RemoteException e) {
+                e.printStackTrace();
             }
         }
     }

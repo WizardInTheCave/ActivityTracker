@@ -5,6 +5,7 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.UriMatcher;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 
@@ -27,7 +28,7 @@ public class LocationProvider extends ContentProvider {
     @Override
     public boolean onCreate() {
 
-        this.dbHelper = new SQLManager(this.getContext(), "LocatioDB", null, 6);
+        this.dbHelper = new SQLManager(this.getContext(), "LocationDB4", null, 6);
         return true;
     }
 
@@ -49,15 +50,20 @@ public class LocationProvider extends ContentProvider {
     @Override
     public Uri insert(Uri uri, ContentValues values){
 
-        SQLiteDatabase dataBase = dbHelper.getWritableDatabase();
+        try {
+            SQLiteDatabase dataBase = dbHelper.getWritableDatabase();
 
-        String tableName = "Locations";
-        long id = dataBase.insert(tableName, null, values);
-        dataBase.close();
+            String tableName = "Locations";
+            long id = dataBase.insert(tableName, null, values);
+            dataBase.close();
 
-        Uri pathWithInsertRef = ContentUris.withAppendedId(uri, id);
-        getContext().getContentResolver().notifyChange(pathWithInsertRef, null);
-        return pathWithInsertRef;
+            Uri pathWithInsertRef = ContentUris.withAppendedId(uri, id);
+            getContext().getContentResolver().notifyChange(pathWithInsertRef, null);
+            return pathWithInsertRef;
+        }
+        catch (SQLException e){
+            throw e;
+        }
     }
 
     @Override

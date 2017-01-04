@@ -1,8 +1,10 @@
 package com.example.jack.coursework4_activitytracker;
 
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -17,7 +19,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
+import android.widget.TableLayout;
+import android.widget.TableRow;
 import android.widget.TextView;
+
+import com.google.android.gms.nearby.messages.internal.ClientAppContext;
 
 import java.util.ArrayList;
 
@@ -27,7 +34,14 @@ public class MainActivity extends AppCompatActivity {
     Messenger replyMessenger;
     boolean activityIsBound = false;
 
-    ArrayList<double[]> locations = new ArrayList<>();
+    ArrayList<GoogleMapPos> locations = new ArrayList<>();
+
+    IntentFilter intentFilter;
+    MainReceiver receiver;
+
+    static final int SHOW_ON_MAP = 1;
+
+    boolean isTracking = false;
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
@@ -40,51 +54,56 @@ public class MainActivity extends AppCompatActivity {
 
         }
     };
-
-    /**
-     * Load location data out of our content provider and into the activity for display purposes
-     */
-    public void loadFromDB(View v) {
-        locations.clear();
-        // String queryFieldClean = "\"" + currentRecipeTitle + "\"";
-
-        final String[] projection = {LocationContentProviderContract.ALTITUDE, LocationContentProviderContract.LONGITUDE, LocationContentProviderContract.LATITUDE};
-
-        Cursor cursor = getContentResolver().query(LocationContentProviderContract.LOCATION_URI,
-                projection,
-                null, null, null, null);
-        // LocationContentProviderContract.TITLE + "=" + queryFieldClean
-        // getContentResolver().q
+    public void showMap(View v){
 
 
-        if (cursor != null) {
-            // get all the recipes in the database stored in the form of a hash map so can send back to main activity
-            if (cursor.moveToFirst()) {
-                do {
-                    double[] location = new double[3];
-                    location[0] = cursor.getDouble(cursor.getColumnIndex(LocationContentProviderContract.ALTITUDE));
-                    location[1] = cursor.getDouble(cursor.getColumnIndex(LocationContentProviderContract.LONGITUDE));
-                    location[2] = cursor.getDouble(cursor.getColumnIndex(LocationContentProviderContract.LATITUDE));
-                    locations.add(location);
-                    // read each query record
-
-                } while (cursor.moveToNext());
-            }
-            cursor.close();
-        }
-
-        String locationsData = "";
-
-        for(double[] location : locations){
-             locationsData += Double.toString(location[0]) + Double.toString(location[1]) + Double.toString(location[2])+ "\n";
-        }
-
-        TextView locationView = (TextView) findViewById(R.id.dbContentView);
-        locationView.setText(locationsData);
+        Intent intent = new Intent(MainActivity.this, MapsActivity.class);
+        intent.putExtra("locationData", locations);
+        startActivityForResult(intent, SHOW_ON_MAP);
     }
     private void updateUI(){
 
     }
+
+    /**
+     * get updates
+     */
+    class MainReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            // get the latest values from the ALocationListener activity
+            int _id = intent.getIntExtra("_id", 0);
+            double alt = intent.getDoubleExtra("Altitude", 0);
+            double latitude = intent.getDoubleExtra("Latitude", 0);
+            double longitude = intent.getDoubleExtra("Longitude", 0);
+
+            TableLayout tl = (TableLayout)findViewById(R.id.mainTableTL);
+
+            Context currentContext = getApplicationContext();
+            TableRow tr = new TableRow(currentContext);
+
+            TextView idTextView = new TextView(currentContext);
+            TextView altTextView = new TextView(currentContext);
+            TextView latTextView = new TextView(currentContext);
+            TextView longTextView = new TextView(currentContext);
+
+            idTextView.setText(Integer.toString(_id));
+            altTextView.setText(Double.toString(alt));
+            latTextView.setText(Double.toString(latitude));
+            longTextView.setText(Double.toString(longitude));
+
+            tr.addView(idTextView);
+            tr.addView(altTextView);
+            tr.addView(latTextView);
+            tr.addView(longTextView);
+
+
+            tl.addView(tr);
+            Log.d("something happened", "something seems to have happened");
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -98,30 +117,53 @@ public class MainActivity extends AppCompatActivity {
         activityIsBound = this.bindService(initialBindIntent, serviceConnection, Context.BIND_AUTO_CREATE);
 
         replyMessenger = new Messenger(new MyHandler());
+
+
+        receiver = new MainReceiver();
+        intentFilter = new IntentFilter();
+        intentFilter.addAction(LocationManagementService.RECEIVE_LOCATION);
+        registerReceiver(receiver, intentFilter);
     }
 
-    public void startTracking(View v){
+    public void changeTrackingStatus(View v){
 
         if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
             ActivityCompat.requestPermissions( this, new String[] {  android.Manifest.permission.ACCESS_COARSE_LOCATION  },
                     LocationManagementService.MY_PERMISSION_COURSE_LOCATION_REQ_CODE );
         }
 
-        if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) == PackageManager.PERMISSION_GRANTED ) {
-            Message message = Message.obtain(null, LocationManagementService.START_LOGGING, 0, 0);
-            ListenerParcel parcel = new ListenerParcel();
-            parcel.isLogging = 1;
+        if(isTracking) {
+            Message message = Message.obtain(null, LocationManagementService.STOP_LOGGING, 0, 0);
+            sendMessageToService(message);
 
-            Bundle bundle = new Bundle();
-            bundle.putParcelable("myParcel", parcel);
-            message.setData(bundle);
-            message.replyTo = replyMessenger;
+            Button trackingButton = (Button)findViewById(R.id.trackingButton);
+            trackingButton.setText("Start Tracking");
+            isTracking = false;
+        }
+        // tell the service to stop logging our users gps coordinates
+        else{
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                Message message = Message.obtain(null, LocationManagementService.START_LOGGING, 0, 0);
+                sendMessageToService(message);
 
-            try {
-                messenger.send(message);
-            } catch (RemoteException e) {
-                e.printStackTrace();
+                Button trackingButton = (Button)findViewById(R.id.trackingButton);
+                trackingButton.setText("Stop Tracking");
+                isTracking = true;
             }
+        }
+    }
+    private void sendMessageToService(Message message){
+        ListenerParcel parcel = new ListenerParcel();
+
+        Bundle bundle = new Bundle();
+        bundle.putParcelable("myParcel", parcel);
+        message.setData(bundle);
+        message.replyTo = replyMessenger;
+
+        try {
+            messenger.send(message);
+        } catch (RemoteException e) {
+            e.printStackTrace();
         }
     }
 

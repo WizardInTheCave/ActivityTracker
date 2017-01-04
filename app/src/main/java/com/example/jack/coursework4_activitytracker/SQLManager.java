@@ -24,7 +24,7 @@ public class SQLManager extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase dataBase) {
         dataBase.execSQL("CREATE TABLE " + RECIPE_TABLE_NAME + "(" +
-                "_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "_id INTEGER PRIMARY KEY, " +
                 "Altitude FLOAT, " +
                 "Longitude FLOAT," +
                 "Latitude FLOAT" +

@@ -42,7 +42,7 @@ public class ListenerParcel implements Parcelable {
     @Override
     public void writeToParcel(Parcel out, int flags)
     {
-        out.writeInt(this.isLogging);
+        // out.writeInt(this.isLogging);
 
 //        out.writeDouble(this.altitude);
 //        out.writeDouble(this.latitude);
@@ -55,7 +55,7 @@ public class ListenerParcel implements Parcelable {
      */
     private void readFromParcel(Parcel in)
     {
-        this.isLogging = in.readInt();
+        // this.isLogging = in.readInt();
 //        this.latitude = in.readDouble();
 //        this.longitude = in.readDouble();
     }

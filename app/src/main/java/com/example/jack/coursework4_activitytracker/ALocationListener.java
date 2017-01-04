@@ -15,10 +15,8 @@ import android.os.Bundle;
 
 public class ALocationListener implements LocationListener {
 
-    double altitude;
-    double latitude;
-    double longitude;
 
+    int _id = 0;
     Context serviceContext;
 
     public ALocationListener(Context serviceContext){
@@ -34,12 +32,14 @@ public class ALocationListener implements LocationListener {
     {
         Intent locationIntent = new Intent("locationData");
 
-        locationIntent.putExtra("Latitude", location.getAltitude());
-        locationIntent.putExtra("Longitude", location.getLatitude());
-        locationIntent.putExtra("Provider", location.getLongitude());
+        locationIntent.putExtra("_id", _id);
+        locationIntent.putExtra("Altitude", location.getAltitude());
+        locationIntent.putExtra("Latitude", location.getLatitude());
+        locationIntent.putExtra("Longitude", location.getLongitude());
 
         locationIntent.setAction(LocationManagementService.RECEIVE_LOCATION);
         serviceContext.sendBroadcast(locationIntent);
+        _id++;
     }
 
     @Override

@@ -1,8 +1,113 @@
-<fragment xmlns:android="http://schemas.android.com/apk/res/android"
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:map="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/map"
-    android:name="com.google.android.gms.maps.SupportMapFragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.example.jack.coursework4_activitytracker.MapsActivity" />
+    android:orientation="vertical">
+
+
+    <!--android:layout_weight="0.99"-->
+    <!--android:hint="@string/EditTest"-->
+
+    <!--android:layout_weight="1"-->
+    <!--android:hint="@string/integerTest"-->
+
+    <!--android:hint="@string/integerTest"-->
+
+    <Button
+        android:id="@+id/deleteAll"
+        android:layout_width="114dp"
+        android:layout_height="wrap_content"
+        android:text="Delete All"
+        android:onClick="deleteAll"
+        android:layout_alignBaseline="@+id/deletePoint"
+        android:layout_alignBottom="@+id/deletePoint"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="20dp" />
+
+    <Button android:id="@+id/deletePoint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Delete Point"
+        android:onClick="deletePoint"
+        android:layout_marginBottom="11dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true" />
+
+    <TextView
+        android:text="Longitude:"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/longText"
+        android:layout_above="@+id/deletePoint"
+        android:layout_alignStart="@+id/deletePoint" />
+
+    <TextView
+        android:text="Latitude:"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/latText"
+        android:layout_above="@+id/longText"
+        android:layout_alignStart="@+id/longText" />
+
+    <fragment
+        android:id="@+id/map"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        tools:context="com.example.jack.coursework4_activitytracker.MapsActivity"
+        android:layout_weight="0.18"
+        android:layout_height="380dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:text="Altitude:"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/altText"
+        android:layout_above="@+id/latText"
+        android:layout_alignStart="@+id/latText" />
+
+    <TextView
+        android:text="Mark ID:"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/idText"
+        android:layout_above="@+id/altText"
+        android:layout_alignStart="@+id/altText" />
+
+    <TextView
+        android:text="(Mark ID)"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/idText"
+        android:layout_toEndOf="@+id/longText"
+        android:id="@+id/markIDValText" />
+
+    <TextView
+        android:text="(Altitude)"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/markIDValText"
+        android:layout_alignEnd="@+id/markIDValText"
+        android:id="@+id/altValText" />
+
+    <TextView
+        android:text="(Latitude)"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/altValText"
+        android:layout_toEndOf="@+id/longText"
+        android:id="@+id/latValText" />
+
+    <TextView
+        android:text="(Longitude)"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/deleteAll"
+        android:layout_toEndOf="@+id/longText"
+        android:id="@+id/longValText" />
+    <!--android:text="@string/ButtonTest"-->
+
+</RelativeLayout>
