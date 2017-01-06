@@ -5,13 +5,17 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.net.Uri;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -22,11 +26,12 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 
-public class MapsActivity extends android.support.v4.app.FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
+public class MapsActivity extends android.support.v4.app.FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener,  {
 
 
     private static final String TAG = MapsActivity.class.getSimpleName();
@@ -41,11 +46,49 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
     IntentFilter intentFilter;
     MapsReceiver receiver;
 
+
+    String currentTitle;
+    String currentAlt;
+    String currentImage;
+    String currentLat;
+    String currentLong;
+
+    static final String CURRENT_TITLE_ID = "markerTitle";
+    static final String CURRENT_ALTITUDE_ID = "markerAlt";
+    static final String CURRENT_IMAGE_ID = "markerImg";
+    static final String CURRENT_LAT_ID = "markerLat";
+    static final String CURRENT_LONG_ID = "markerLong";
+
+    // Storage Permissions
+    private final int REQUEST_EXTERNAL_STORAGE = 1;
+    private String[] PERMISSIONS_STORAGE = {
+            android.Manifest.permission.READ_EXTERNAL_STORAGE,
+            android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+    };
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_maps);
+
+        // if we have rotated the screen then we want the information we were displaying previously to still be displayed
+        if (savedInstanceState != null) {
+            // Restore value of members from saved state
+            currentTitle = savedInstanceState.getString(CURRENT_TITLE_ID);
+            currentAlt = savedInstanceState.getString(CURRENT_ALTITUDE_ID);
+            currentImage = savedInstanceState.getString(CURRENT_IMAGE_ID);
+            currentLat = savedInstanceState.getString(CURRENT_LAT_ID);
+            currentLong = savedInstanceState.getString(CURRENT_LONG_ID);
+            updateUI();
+
+        } else {
+            // Probably initialize members with default values for a new instance
+            setDefaults();
+        }
+
+
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -57,6 +100,20 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
         intentFilter.addAction(LocationManagementService.RECEIVE_LOCATION);
         registerReceiver(receiver, intentFilter);
 
+    }
+
+    /**
+     * when the maps activity is rotated want to preserve the display state
+     * @param savedInstanceState
+     */
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        savedInstanceState.putString(CURRENT_TITLE_ID, currentTitle);
+        savedInstanceState.putString(CURRENT_ALTITUDE_ID, currentAlt);
+        savedInstanceState.putString(CURRENT_IMAGE_ID, currentImage);
+        savedInstanceState.putString(CURRENT_LAT_ID, currentLat);
+        savedInstanceState.putString(CURRENT_LONG_ID, currentLong);
+        super.onSaveInstanceState(savedInstanceState);
     }
 
     /**
@@ -97,34 +154,135 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
     public boolean onMarkerClick(final Marker marker) {
         currentMarker = marker;
 
-        TextView idValText = (TextView)  findViewById(R.id.idText);
-        TextView altValText = (TextView)  findViewById(R.id.altValText);
-        TextView latValText = (TextView) findViewById(R.id.latValText);
-        TextView longValText = (TextView) findViewById(R.id.longValText);
-
         final String title = marker.getTitle();
-
-        idValText.setText(title);
+        currentTitle = marker.getTitle();
+        // currentAlt = Double.toString(marker.);
 
         // the google map markers don't contain alt data so will need to cross reference to get this
-        // altValText.setText(Double.toString(marker.));
-        latValText.setText(Double.toString(marker.getPosition().latitude));
-        longValText.setText(Double.toString(marker.getPosition().longitude));
+        // altValText.setText(D);
+        currentLat = Double.toString(marker.getPosition().latitude);
+        currentLong = Double.toString(marker.getPosition().longitude);
 
-        googleMap.snapshot(new GoogleMap.SnapshotReadyCallback() {
-            public void onSnapshotReady(Bitmap bitmap) {
-                // Write image to disk
-                FileOutputStream out = null;
-                try {
-                    out = new FileOutputStream("/mnt/sdcard/map_"+ title + ".png");
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                }
-                bitmap.compress(Bitmap.CompressFormat.PNG, 90, out);
-            }
-        });
+        // ImageView markerImage = (ImageView)findViewById(R.id.markerImage);
 
+        getPhoto(title);
+
+        // markerImage.setImageURI(imageUri);
         return true;
+    }
+
+    private void setDefaults(){
+
+        final String TITLE = "(Mark ID)";
+        final String ALTITUDE = "(Altitude)";
+        final String LATITUDE = "(Latitude)";
+        final String LONGITUDE = "(Longitude)";
+
+
+        TextView idValText = (TextView)findViewById(R.id.idValText);
+
+        // TextView altValText = (TextView)findViewById(R.id.altValText);
+        TextView latValText = (TextView)findViewById(R.id.latValText);
+        TextView longValText = (TextView)findViewById(R.id.longValText);
+
+        idValText.setText(TITLE);
+        // altValText.setText(currentAlt);
+
+        latValText.setText(LATITUDE);
+        longValText.setText(LONGITUDE);
+
+    }
+
+    private void updateUI(){
+
+
+        TextView idValText = (TextView)findViewById(R.id.idValText);
+        // TextView altValText = (TextView)findViewById(R.id.altValText);
+        ImageView markerImage = (ImageView)findViewById(R.id.markerImage);
+        TextView latValText = (TextView)findViewById(R.id.latValText);
+        TextView longValText = (TextView)findViewById(R.id.longValText);
+
+
+        idValText.setText(currentTitle);
+
+        Uri imageUri = Uri.parse(currentImage);
+        markerImage.setImageURI(imageUri);
+        // altValText.setText(currentAlt);
+        latValText.setText(currentLat);
+        longValText.setText(currentLong);
+
+        // the google map markers don't contain alt data so will need to cross reference to get this
+
+
+        //getPhoto(currentTitle);
+
+
+    }
+
+
+    /**
+     * Get an zoomed in image of the marker
+     * @param title the key we are going to use to reference the image in internal storage
+     * @return Uri for the image
+     */
+    private void getPhoto(String title){
+
+        verifyStoragePermissions();
+
+        final float originalZoom = googleMap.getCameraPosition().zoom;
+        final String imagePath ="/mnt/sdcard/map_"+ title + ".png";
+
+        File image = new File(imagePath);
+
+        if(!image.exists()) {
+
+            // zoom in to get a good photo of the marker
+            // googleMap.animateCamera(CameraUpdateFactory.zoomTo(10));
+
+            // we want to only take a photo once the camera has moved to the correct position
+
+            googleMap.snapshot(new GoogleMap.SnapshotReadyCallback() {
+                public void onSnapshotReady(Bitmap bitmap) {
+                    // Write image to disk
+                    FileOutputStream out = null;
+                    try {
+                        out = new FileOutputStream(imagePath);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 90, out);
+
+                    // set the mini image of the marker on the display
+                    currentImage = imagePath;
+                    updateUI();
+
+                    // zoom out again
+                    // googleMap.animateCamera(CameraUpdateFactory.zoomTo(originalZoom));
+                }
+            });
+            // zoom back out again for the user
+        }
+    }
+//
+//    /**
+//     * Checks if the app has permission to write to device storage
+//     *
+//     * If the app does not has permission then the user will be prompted to grant permissions
+//     *
+//     * @param activity
+//     */
+    public void verifyStoragePermissions() {
+       // Check if we have write permission
+        int permission = ActivityCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
+        // try to get permission granted
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                    this,
+                    PERMISSIONS_STORAGE,
+                    REQUEST_EXTERNAL_STORAGE
+            );
+        }
     }
 
     /**
