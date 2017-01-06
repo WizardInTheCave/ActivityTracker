@@ -31,7 +31,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 
-public class MapsActivity extends android.support.v4.app.FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener,  {
+public class MapsActivity extends android.support.v4.app.FragmentActivity implements
+        OnMapReadyCallback, GoogleMap.OnMarkerClickListener  {
 
 
     private static final String TAG = MapsActivity.class.getSimpleName();
@@ -52,6 +53,12 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
     String currentImage;
     String currentLat;
     String currentLong;
+
+    String imagePath;
+
+    boolean takingPhoto = false;
+
+    float originalZoomAmount;
 
     static final String CURRENT_TITLE_ID = "markerTitle";
     static final String CURRENT_ALTITUDE_ID = "markerAlt";
@@ -128,9 +135,7 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
 
         currentMarker.remove();
 
-//        LocationContentProviderContract.LOCATION_URI,
-//                LocationContentProviderContract.LATITUDE + "=\"" + currentMarker.getPosition().latitude + "\"" +
-//                        " AND " + LocationContentProviderContract.LONGITUDE + "=\"" + currentMarker.getPosition().longitude + "\"", null
+
     }
 
     /**
@@ -154,7 +159,6 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
     public boolean onMarkerClick(final Marker marker) {
         currentMarker = marker;
 
-        final String title = marker.getTitle();
         currentTitle = marker.getTitle();
         // currentAlt = Double.toString(marker.);
 
@@ -165,7 +169,7 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
 
         // ImageView markerImage = (ImageView)findViewById(R.id.markerImage);
 
-        getPhoto(title);
+        getPhoto(marker);
 
         // markerImage.setImageURI(imageUri);
         return true;
@@ -210,57 +214,69 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
         // altValText.setText(currentAlt);
         latValText.setText(currentLat);
         longValText.setText(currentLong);
-
         // the google map markers don't contain alt data so will need to cross reference to get this
-
-
-        //getPhoto(currentTitle);
-
 
     }
 
+    /**
+     * run this code when the map is done being loaded
+     */
+//    @Override
+//    public void onMapLoaded() {
+//
+//    }
 
     /**
      * Get an zoomed in image of the marker
-     * @param title the key we are going to use to reference the image in internal storage
      * @return Uri for the image
      */
-    private void getPhoto(String title){
+    private void getPhoto(Marker marker){
 
         verifyStoragePermissions();
 
-        final float originalZoom = googleMap.getCameraPosition().zoom;
-        final String imagePath ="/mnt/sdcard/map_"+ title + ".png";
+        final String title = marker.getTitle();
 
+
+        imagePath ="/mnt/sdcard/map_"+ title + ".png";
         File image = new File(imagePath);
 
         if(!image.exists()) {
-
             // zoom in to get a good photo of the marker
-            // googleMap.animateCamera(CameraUpdateFactory.zoomTo(10));
+            originalZoomAmount = googleMap.getCameraPosition().zoom;
 
-            // we want to only take a photo once the camera has moved to the correct position
+            // map.setMyLocationEnabled(true);
+            // isAutomaticZoomIn = true;
+            // googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom());
 
-            googleMap.snapshot(new GoogleMap.SnapshotReadyCallback() {
-                public void onSnapshotReady(Bitmap bitmap) {
-                    // Write image to disk
-                    FileOutputStream out = null;
-                    try {
-                        out = new FileOutputStream(imagePath);
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    }
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 90, out);
+            googleMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
+                @Override
+                public void onMapLoaded() {
 
-                    // set the mini image of the marker on the display
-                    currentImage = imagePath;
-                    updateUI();
+                    // we want to only take a photo once the camera has moved to the correct position
+                    googleMap.snapshot(new GoogleMap.SnapshotReadyCallback() {
+                        public void onSnapshotReady(Bitmap bitmap) {
+                            // Write image to storage
+                            FileOutputStream out = null;
+                            try {
+                                out = new FileOutputStream(imagePath);
+                            } catch (FileNotFoundException e) {
+                                e.printStackTrace();
+                            }
+                            bitmap.compress(Bitmap.CompressFormat.PNG, 90, out);
 
-                    // zoom out again
-                    // googleMap.animateCamera(CameraUpdateFactory.zoomTo(originalZoom));
+                            // set the mini image of the marker on the display
+                            currentImage = imagePath;
+                            updateUI();
+
+                            googleMap.animateCamera(CameraUpdateFactory.zoomTo(originalZoomAmount));
+                        }
+                    });
                 }
             });
-            // zoom back out again for the user
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(marker.getPosition(), 8));
+        }else{
+            currentImage = imagePath;
+            updateUI();
         }
     }
 //
@@ -319,6 +335,7 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
 
     }
 
+
     /**
      * Manipulates the map once available.
      * This callback is triggered when the map is ready to be used.
@@ -334,7 +351,9 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
 
         // if(mapLoaded) {
             googleMap.setOnMarkerClickListener(this);
+
             this.googleMap = googleMap;
+
             this.markers = new ArrayList<>();
 
             ArrayList<GoogleMapPos> locations = loadFromDB();
