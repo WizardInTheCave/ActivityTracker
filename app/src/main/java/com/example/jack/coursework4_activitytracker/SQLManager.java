@@ -27,7 +27,8 @@ public class SQLManager extends SQLiteOpenHelper {
                 "_id INTEGER PRIMARY KEY, " +
                 "Altitude FLOAT, " +
                 "Longitude FLOAT," +
-                "Latitude FLOAT" +
+                "Latitude FLOAT," +
+                "ImagePath TEXT" +
                 ");");
     }
 

@@ -9,6 +9,7 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 
+
 /**
  * Created by Jack on 22/12/2016.
  */
@@ -27,8 +28,7 @@ public class LocationProvider extends ContentProvider {
 
     @Override
     public boolean onCreate() {
-
-        this.dbHelper = new SQLManager(this.getContext(), "LocationDB4", null, 6);
+        this.dbHelper = new SQLManager(this.getContext(), "LocationDB11", null, 6);
         return true;
     }
 
@@ -66,34 +66,61 @@ public class LocationProvider extends ContentProvider {
         }
     }
 
+    /**
+     * Want the ability to update primarily to add images of the locations
+     * @param uri
+     * @param whereClause
+     * @param whereArgs the values we are using as arguments for the update where clause
+     * @return
+     */
+    @Override
+    public int update(Uri uri, ContentValues contentValues, String whereClause, String[] whereArgs) {
+        // throw new UnsupportedOperationException("not implemented");
+        SQLiteDatabase dataBase = dbHelper.getWritableDatabase();
+
+        // dataBase.execSQL("UPDATE Locations SET ImagePath=\"/mnt/sdcard/map_0.png\" WHERE _id=0");
+
+        long id = dataBase.update("Locations", contentValues, whereClause, whereArgs);
+
+        //dataBase.up
+        // long id =dataBase.updateWithOnConflict("Locations", contentValues, whereClause, whereArgs, SQLiteDatabase.CONFLICT_REPLACE);
+        // long id = dataBase.updateWithOnConflict("Locations", contentValues, whereClause, null, SQLiteDatabase.CONFLICT_REPLACE);
+        // long id = 0;
+
+        dataBase.close();
+
+        Uri pathWithDelRef = ContentUris.withAppendedId(uri, id);
+        getContext().getContentResolver().notifyChange(pathWithDelRef, null);
+
+        return 0;
+    }
+
     @Override
     public Cursor query(Uri uri, String[] tableColumns, String whereCaluse, String[] whereArgs, String sortOrder) {
 
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        SQLiteDatabase dataBase = dbHelper.getWritableDatabase();
         switch(uriMatcher.match(uri))
         {
             case 1:
-                return db.query("Locations", tableColumns, whereCaluse, whereArgs, null, null, sortOrder);
+                return dataBase.query("Locations", tableColumns, whereCaluse, whereArgs, null, null, sortOrder);
             default:
                 return null;
         }
     }
 
     @Override
-    public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
-        throw new UnsupportedOperationException("not implemented");
-    }
-
-    @Override
-    public int delete(Uri uri, String where, String[] selectionArgs) {
+    public int delete(Uri uri, String where, String[] whereClause) {
 
         SQLiteDatabase dataBase = dbHelper.getWritableDatabase();
 
-        String[] splitUri = uri.toString().split("/");
-        int tableNameIdx = splitUri.length - 1;
-        String tableName = splitUri[tableNameIdx];
+//        String[] splitUri = uri.toString().split("/");
+//        int tableNameIdx = splitUri.length - 1;
+//        String tableName = splitUri[tableNameIdx];
 
-        long id = dataBase.delete(tableName, where, selectionArgs);
+        // dataBase.upda
+        // dataBase.de
+
+        long id = dataBase.delete("Locations", where, whereClause);
         dataBase.close();
 
         Uri pathWithDelRef = ContentUris.withAppendedId(uri, id);

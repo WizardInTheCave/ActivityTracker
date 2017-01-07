@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -20,11 +19,10 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TableLayout;
-import android.widget.TableRow;
-import android.widget.TextView;
 
-import com.google.android.gms.nearby.messages.internal.ClientAppContext;
+import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.series.DataPoint;
+import com.jjoe64.graphview.series.LineGraphSeries;
 
 import java.util.ArrayList;
 
@@ -34,14 +32,14 @@ public class MainActivity extends AppCompatActivity {
     Messenger replyMessenger;
     boolean activityIsBound = false;
 
-    ArrayList<GoogleMapPos> locations = new ArrayList<>();
-
     IntentFilter intentFilter;
     MainReceiver receiver;
 
     static final int SHOW_ON_MAP = 1;
 
     boolean isTracking = false;
+
+    LineGraphSeries<DataPoint> series;
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
@@ -54,54 +52,98 @@ public class MainActivity extends AppCompatActivity {
 
         }
     };
+
+    static final String LOCATION_ID = "locations";
+    static final String SPEEDS_ID = "speeds";
+    static final String TIMES_ID = "times";
+
+    ArrayList<GoogleMapPos> locations = new ArrayList<>();
+    ArrayList<Double> speeds = new ArrayList<>();
+    ArrayList<Long> times = new ArrayList<>();
+
+    //    /**
+//     * when the maps activity is rotated want to preserve the display state
+//     * @param savedInstanceState
+//     */
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        savedInstanceState.putSerializable(SPEEDS_ID, speeds);
+        savedInstanceState.putSerializable(TIMES_ID, times);
+        savedInstanceState.putSerializable(LOCATION_ID, locations);
+
+        super.onSaveInstanceState(savedInstanceState);
+    }
+
     public void showMap(View v){
 
-
         Intent intent = new Intent(MainActivity.this, MapsActivity.class);
-        intent.putExtra("locationData", locations);
+        // intent.putExtra("locationData", locations);
         startActivityForResult(intent, SHOW_ON_MAP);
     }
     private void updateUI(){
 
     }
 
+
+
     /**
-     * get updates
+     * get updates on the location which we can use to generate graphs for the user
      */
     class MainReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
 
             // get the latest values from the ALocationListener activity
-            int _id = intent.getIntExtra("_id", 0);
-            double alt = intent.getDoubleExtra("Altitude", 0);
-            double latitude = intent.getDoubleExtra("Latitude", 0);
-            double longitude = intent.getDoubleExtra("Longitude", 0);
 
-            TableLayout tl = (TableLayout)findViewById(R.id.mainTableTL);
+            GoogleMapPos currentLocation = (GoogleMapPos)intent.getExtras().getSerializable("Location");
+            locations.add(currentLocation);
 
-            Context currentContext = getApplicationContext();
-            TableRow tr = new TableRow(currentContext);
+            Double speed = intent.getDoubleExtra("Speed", 0);
+            speeds.add(speed);
 
-            TextView idTextView = new TextView(currentContext);
-            TextView altTextView = new TextView(currentContext);
-            TextView latTextView = new TextView(currentContext);
-            TextView longTextView = new TextView(currentContext);
-
-            idTextView.setText(Integer.toString(_id));
-            altTextView.setText(Double.toString(alt));
-            latTextView.setText(Double.toString(latitude));
-            longTextView.setText(Double.toString(longitude));
-
-            tr.addView(idTextView);
-            tr.addView(altTextView);
-            tr.addView(latTextView);
-            tr.addView(longTextView);
+            // get a list of all the seconds from when we started recording gps coordinates
+            long startTime = locations.get(0).timeSeconds;
+            times.add(currentLocation.timeSeconds - startTime);
 
 
-            tl.addView(tr);
+            // speed over time graph
+            GraphView speedVsTime = (GraphView)findViewById(R.id.speedOverTimeGraph);
+            plotGraph(speedVsTime, times, speeds);
+
+            ArrayList<Double> alts = new ArrayList<>();
+
+            for(GoogleMapPos loc : locations){
+                alts.add(loc.alt);
+            }
+
+            // elevation over time graph
+            GraphView altVsTime = (GraphView)findViewById(R.id.elevationOverTimeGraph);
+            plotGraph(altVsTime, times, alts);
+
+
             Log.d("something happened", "something seems to have happened");
         }
+    }
+
+    /**
+     * This method plots a graph using a graph view and some Arraylists which form the x and y values for the data points
+     * @param graphView GraphView object
+     * @param xAxis X values
+     * @param yAxis Y values
+     */
+    private void plotGraph(GraphView graphView, ArrayList<Long> xAxis, ArrayList<Double> yAxis){
+
+        series = new LineGraphSeries<>();
+        int graphEnd = xAxis.size();
+
+        if(graphEnd == yAxis.size()){
+            for(int ii = 0; ii < graphEnd; ii++) {
+                Long x = xAxis.get(ii);
+                Double y = yAxis.get(ii);
+                series.appendData(new DataPoint(x, y), true, graphEnd);
+            }
+        }
+        graphView.addSeries(series);
     }
 
     @Override
@@ -117,6 +159,11 @@ public class MainActivity extends AppCompatActivity {
         activityIsBound = this.bindService(initialBindIntent, serviceConnection, Context.BIND_AUTO_CREATE);
 
         replyMessenger = new Messenger(new MyHandler());
+
+
+        // locations = savedInstanceState.get(LOCATION_ID);
+        //times = savedInstanceState.getSerializable(TIMES_ID);
+
 
 
         receiver = new MainReceiver();
@@ -184,6 +231,7 @@ public class MainActivity extends AppCompatActivity {
     public void onDestroy(){
         if(activityIsBound) {
             unbindService(serviceConnection);
+            unregisterReceiver(receiver);
         }
         super.onDestroy();
     }

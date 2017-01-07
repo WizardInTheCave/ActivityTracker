@@ -10,6 +10,7 @@ public class LocationContentProviderContract {
 
     public static final String _ID = "_id";
     public static final String ALTITUDE = "Altitude";
+    public static final String IMAGE_PATH = "ImagePath";
     public static final String LONGITUDE = "Longitude";
     public static final String LATITUDE = "Latitude";
 

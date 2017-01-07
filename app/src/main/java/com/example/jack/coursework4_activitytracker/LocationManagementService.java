@@ -46,20 +46,18 @@ public class LocationManagementService extends Service {
         @Override
         public void onReceive(Context context, Intent intent) {
 
-            // get the latest values from the ALocationListener activity
-            int _id = intent.getIntExtra("_id", 0);
-            double altitude = intent.getDoubleExtra("Altitude", 0);
-            double latitude = intent.getDoubleExtra("Latitude", 0);
-            double longitude = intent.getDoubleExtra("Longitude", 0);
+            GoogleMapPos currentLocation = (GoogleMapPos)intent.getExtras().getSerializable("Location");
 
             ContentValues newValues = new ContentValues();
 
-            newValues.put(LocationContentProviderContract._ID, _id);
-            newValues.put(LocationContentProviderContract.ALTITUDE, altitude);
-            newValues.put(LocationContentProviderContract.LONGITUDE, longitude);
-            newValues.put(LocationContentProviderContract.LATITUDE, latitude);
+            newValues.put(LocationContentProviderContract._ID, currentLocation._id);
+            newValues.put(LocationContentProviderContract.ALTITUDE, currentLocation.alt);
+            newValues.put(LocationContentProviderContract.LONGITUDE, currentLocation.longitude);
+            newValues.put(LocationContentProviderContract.LATITUDE, currentLocation.latitude);
+            newValues.put(LocationContentProviderContract.IMAGE_PATH, "null");
 
-            // getContentResolver().insert(LocationContentProviderContract.LOCATION_URI, newValues);
+
+            getContentResolver().insert(LocationContentProviderContract.LOCATION_URI, newValues);
         }
     }
     @Override

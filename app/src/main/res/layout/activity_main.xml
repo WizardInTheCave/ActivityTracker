@@ -31,16 +31,37 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentStart="true" />
 
-    <TableLayout
-        android:layout_width="359dp"
-        android:layout_height="363dp"
-        android:layout_below="@+id/trackingButton"
-        android:layout_toStartOf="@+id/showMapButton"
-        android:layout_marginTop="16dp"
-        android:layout_alignParentEnd="true"
-        android:id="@+id/mainTableTL">
+    <!--<TableLayout-->
+        <!--android:layout_width="359dp"-->
+        <!--android:layout_height="363dp"-->
+        <!--android:layout_below="@+id/trackingButton"-->
+        <!--android:layout_toStartOf="@+id/showMapButton"-->
+        <!--android:layout_marginTop="16dp"-->
+        <!--android:layout_alignParentEnd="true"-->
+        <!--android:id="@+id/mainTableTL">-->
+    <!--</TableLayout>-->
 
+    <com.jjoe64.graphview.GraphView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/speedOverTimeGraph"
+        android:layout_below="@+id/showMapButton"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="31dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignEnd="@+id/showMapButton"
+        android:layout_marginEnd="124dp"
+        android:layout_marginBottom="198dp" />
 
-    </TableLayout>
+    <com.jjoe64.graphview.GraphView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/elevationOverTimeGraph"
+        android:layout_alignTop="@+id/speedOverTimeGraph"
+        android:layout_alignStart="@+id/showMapButton"
+        android:layout_alignBottom="@+id/speedOverTimeGraph"
+        android:layout_marginEnd="61dp"
+        android:layout_alignParentEnd="true" />
 
 </RelativeLayout>

@@ -112,11 +112,15 @@
     <ImageView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        map:srcCompat="@drawable/cast_album_art_placeholder"
+        map:srcCompat="@drawable/marker_graphic"
         android:id="@+id/markerImage"
         android:layout_alignBottom="@+id/deletePoint"
         android:layout_alignParentStart="true"
-        android:layout_marginStart="12dp" />
+        android:layout_marginStart="12dp"
+        android:layout_toStartOf="@+id/deletePoint"
+        android:layout_marginEnd="15dp"
+        android:layout_marginTop="11dp"
+        android:layout_alignTop="@+id/idText" />
     <!--android:text="@string/ButtonTest"-->
 
 </RelativeLayout>

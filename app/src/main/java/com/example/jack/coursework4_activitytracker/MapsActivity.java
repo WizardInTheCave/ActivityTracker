@@ -129,12 +129,14 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
      */
     public void deletePoint(View v){
 
-        getContentResolver().delete(LocationContentProviderContract.LOCATION_URI, LocationContentProviderContract._ID +
-                "=" + Integer.valueOf(currentMarker.getTitle())
-                , null);
+        if(currentMarker != null) {
+            currentMarker.remove();
+            String whereClause = LocationContentProviderContract._ID + "= ?";
+            String[] whereArgs = new String[]{currentMarker.getTitle()};
 
-        currentMarker.remove();
-
+            // getContentResolver().update(LocationContentProviderContract.LOCATION_URI, contentValues ,whereClause, whereArgs);
+            getContentResolver().delete(LocationContentProviderContract.LOCATION_URI, whereClause, whereArgs);
+        }
 
     }
 
@@ -144,10 +146,15 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
      */
     public void deleteAll(View v){
         for(Marker marker : markers){
-            marker.remove();
+            if(marker != null) {
+                marker.remove();
+            }
         }
 
-        getContentResolver().delete(LocationContentProviderContract.LOCATION_URI, null, new String[]{"*"});
+        String whereClause = null; // LocationContentProviderContract._ID + "=?";
+        String[] whereArgs = null; // new String[]{"*"};
+
+        getContentResolver().delete(LocationContentProviderContract.LOCATION_URI, whereClause, whereArgs);
     }
 
     /**
@@ -182,6 +189,9 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
         final String LATITUDE = "(Latitude)";
         final String LONGITUDE = "(Longitude)";
 
+        ImageView markerImageView = (ImageView) findViewById(R.id.markerImage);
+
+
 
         TextView idValText = (TextView)findViewById(R.id.idValText);
 
@@ -190,8 +200,8 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
         TextView longValText = (TextView)findViewById(R.id.longValText);
 
         idValText.setText(TITLE);
+        markerImageView.setImageResource(R.drawable.marker_graphic);
         // altValText.setText(currentAlt);
-
         latValText.setText(LATITUDE);
         longValText.setText(LONGITUDE);
 
@@ -236,22 +246,15 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
 
         final String title = marker.getTitle();
 
-
         imagePath ="/mnt/sdcard/map_"+ title + ".png";
         File image = new File(imagePath);
 
         if(!image.exists()) {
             // zoom in to get a good photo of the marker
             originalZoomAmount = googleMap.getCameraPosition().zoom;
-
-            // map.setMyLocationEnabled(true);
-            // isAutomaticZoomIn = true;
-            // googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom());
-
             googleMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
                 @Override
                 public void onMapLoaded() {
-
                     // we want to only take a photo once the camera has moved to the correct position
                     googleMap.snapshot(new GoogleMap.SnapshotReadyCallback() {
                         public void onSnapshotReady(Bitmap bitmap) {
@@ -263,6 +266,8 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
                                 e.printStackTrace();
                             }
                             bitmap.compress(Bitmap.CompressFormat.PNG, 90, out);
+
+                            addImageToDB();
 
                             // set the mini image of the marker on the display
                             currentImage = imagePath;
@@ -309,30 +314,30 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
         public void onReceive(Context context, Intent intent) {
 
             // get the latest values from the ALocationListener activity
-            int _id = intent.getIntExtra("_id", 0);
-            double alt = intent.getDoubleExtra("Altitude", 0);
-            double latitude = intent.getDoubleExtra("Latitude", 0);
-            double longitude = intent.getDoubleExtra("Longitude", 0);
-            GoogleMapPos location = new GoogleMapPos(_id, alt, latitude, longitude);
-            addMarker(location);
+//            int _id = intent.getIntExtra("_id", 0);
+//            double alt = intent.getDoubleExtra("Altitude", 0);
+//            double latitude = intent.getDoubleExtra("Latitude", 0);
+//            double longitude = intent.getDoubleExtra("Longitude", 0);
+
+            GoogleMapPos currentLocation = (GoogleMapPos)intent.getExtras().getSerializable("Location");
+            addMarker(currentLocation);
             Log.d("something happened", "something seems to have happened");
         }
     }
 
 
+    /**
+     * We want to place a new marker on the map which we have either received from the broadcast reciever or loaded from the database
+     * initially.
+     * @param loc a GoogleMapPosition object which contains location data
+     */
     private void addMarker(GoogleMapPos loc){
 
         LatLng location = new LatLng(loc.latitude, loc.longitude);
         // add a new marker to the list of map markers and display
         MarkerOptions newMarker = new MarkerOptions().position(location).title(Integer.toString(loc._id));
-
-        // "Lat: " + Double.toString(loc.latitude) + " Long: " +
-        //Double.toString(loc.longitude) + " Alt: " + Double.toString(loc.alt)
-
         Marker mark = googleMap.addMarker(newMarker);
         markers.add(mark);
-
-
     }
 
 
@@ -350,23 +355,22 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
 
 
         // if(mapLoaded) {
-            googleMap.setOnMarkerClickListener(this);
+        googleMap.setOnMarkerClickListener(this);
 
-            this.googleMap = googleMap;
+        this.googleMap = googleMap;
 
-            this.markers = new ArrayList<>();
+        this.markers = new ArrayList<>();
 
-            ArrayList<GoogleMapPos> locations = loadFromDB();
+        ArrayList<GoogleMapPos> locations = loadFromDB();
 
-            // add all the markers in the database from the start
+        // add all the markers in the database from the start
 
-            for (GoogleMapPos loc : locations) {
-                addMarker(loc);
-            }
-            mapLoaded = false;
+        for (GoogleMapPos loc : locations) {
+            addMarker(loc);
+        }
+        mapLoaded = false;
 
-
-
+    }
         // }
         //LatLng lastLatLang = null// updatePoints = new UpdatePoints();
 //        try {
@@ -375,6 +379,61 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
 //        catch (Exception e){
 //            e.printStackTrace();
 //        }
+
+
+    /**
+     * when we get an image record for a marker we want to add it to the back end database managed by the content provider
+     */
+    private void addImageToDB(){
+
+        // Update "Locations"
+        // SET ImagePath=currentImage
+        // WHERE _id=Integer.parseInt(currentTitle)
+
+        String whereClause = LocationContentProviderContract._ID + "= ?";
+        String[] whereArgs = new String[]{currentTitle};
+                // new String[]{LocationContentProviderContract.IMAGE_PATH + "=" + currentImage};
+
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(LocationContentProviderContract.IMAGE_PATH, "\"" + currentImage + "\""); //whatever column you want to update, I dont know the name of it
+
+        getContentResolver().update(LocationContentProviderContract.LOCATION_URI, contentValues ,whereClause, whereArgs);
+        // ...//any other values you want to update too
+
+//        getContentResolver().update(HabitTable.CONTENT_URI,
+//                values,
+//                HabitTable.ID+"=?",
+//                new String[] {String.valueOf(id)}); //id is the id of the row you wan to update
+
+
+
+
+        // getContentResolver().query(LocationContentProviderContract.LOCATION_URI)
+
+
+        final String[] projection = {LocationContentProviderContract._ID, LocationContentProviderContract.ALTITUDE, LocationContentProviderContract.LATITUDE, LocationContentProviderContract.LONGITUDE,
+        LocationContentProviderContract.IMAGE_PATH};
+
+        Cursor cursor = getContentResolver().query(LocationContentProviderContract.LOCATION_URI,
+                projection,
+                null, null, null, null);
+
+        if (cursor != null) {
+            // get all the recipes in the database stored in the form of a hash map so can send back to main activity
+            if (cursor.moveToFirst()) {
+                do {
+
+                    String _id = Integer.toString(cursor.getInt(cursor.getColumnIndex(LocationContentProviderContract._ID)));
+                    String alt = Double.toString(cursor.getDouble(cursor.getColumnIndex(LocationContentProviderContract.ALTITUDE)));
+                    String latitude = Double.toString(cursor.getDouble(cursor.getColumnIndex(LocationContentProviderContract.LATITUDE)));
+                    String longitude = Double.toString(cursor.getDouble(cursor.getColumnIndex(LocationContentProviderContract.LONGITUDE)));
+                    String imagePath = cursor.getString(cursor.getColumnIndex(LocationContentProviderContract.IMAGE_PATH));
+
+
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
+        }
     }
 
     /**
@@ -398,7 +457,8 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
                     double alt = cursor.getDouble(cursor.getColumnIndex(LocationContentProviderContract.ALTITUDE));
                     double latitude = cursor.getDouble(cursor.getColumnIndex(LocationContentProviderContract.LATITUDE));
                     double longitude = cursor.getDouble(cursor.getColumnIndex(LocationContentProviderContract.LONGITUDE));
-                    locations.add(new GoogleMapPos(_id, alt, latitude, longitude));
+
+                    locations.add(new GoogleMapPos(_id, alt, latitude, longitude, -1));
 
                 } while (cursor.moveToNext());
             }
