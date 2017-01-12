@@ -11,26 +11,6 @@
     tools:context="com.example.jack.coursework4_activitytracker.MainActivity">
 
 
-    <Button
-        android:text="show Map"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/showMapButton"
-        android:onClick="showMap"
-        android:layout_marginStart="27dp"
-        android:layout_alignBaseline="@+id/trackingButton"
-        android:layout_alignBottom="@+id/trackingButton"
-        android:layout_toEndOf="@+id/trackingButton" />
-
-    <Button
-        android:text="Start Tracking"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/trackingButton"
-        android:onClick="changeTrackingStatus"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentStart="true" />
-
     <!--<TableLayout-->
         <!--android:layout_width="359dp"-->
         <!--android:layout_height="363dp"-->
@@ -50,18 +30,70 @@
         android:layout_marginStart="12dp"
         android:layout_marginTop="31dp"
         android:layout_alignParentBottom="true"
-        android:layout_alignEnd="@+id/showMapButton"
-        android:layout_marginEnd="124dp"
-        android:layout_marginBottom="198dp" />
+        android:layout_marginBottom="198dp"
+        android:layout_toStartOf="@+id/loadWalkButton" />
 
     <com.jjoe64.graphview.GraphView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/elevationOverTimeGraph"
         android:layout_alignTop="@+id/speedOverTimeGraph"
-        android:layout_alignStart="@+id/showMapButton"
         android:layout_alignBottom="@+id/speedOverTimeGraph"
-        android:layout_marginEnd="61dp"
-        android:layout_alignParentEnd="true" />
+        android:layout_toEndOf="@+id/journeyNameText" />
+
+    <Button
+        android:text="Start Tracking"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/trackingButton"
+        android:onClick="changeTrackingStatus"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:text="Name your Journey for later:"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/nameJourneyView"
+        android:layout_above="@+id/journeyNameText"
+        android:layout_alignStart="@+id/journeyNameText" />
+
+    <Button
+        android:text="show Map"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/showMapButton"
+        android:onClick="showMap"
+        android:layout_alignParentTop="true"
+        android:layout_alignEnd="@+id/loadWalkButton" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="textPersonName"
+        android:text="Journey Name"
+        android:ems="10"
+        android:id="@+id/journeyNameText"
+        android:layout_above="@+id/saveButton"
+        android:layout_alignParentStart="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/saveButton"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        tools:text="Save Journey"
+        android:onClick="saveJourneyName"
+        android:text="Save Journey" />
+
+    <Button
+        android:text="Load Previous Journey"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/loadWalkButton"
+        android:onClick="loadPreviousJourney"
+        android:layout_alignParentBottom="true"
+        android:layout_toEndOf="@+id/trackingButton" />
 
 </RelativeLayout>

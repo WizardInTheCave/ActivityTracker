@@ -11,6 +11,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.database.SQLException;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -21,6 +23,7 @@ import android.support.v4.content.ContextCompat;
 
 import android.location.LocationManager;
 import android.location.Location;
+import android.util.Log;
 
 public class LocationManagementService extends Service {
 
@@ -32,9 +35,10 @@ public class LocationManagementService extends Service {
 
     public static final String RECEIVE_LOCATION = "com.example.jack.coursework4_activitytracker.RECEIVE_LOCATION";
 
-
     public static final int STOP_LOGGING = 1;
     public static final int START_LOGGING = 2;
+    public static final int UPDATE_INSERT_KEY = 3;
+
     public static final int MY_PERMISSION_COURSE_LOCATION_REQ_CODE = 1;
 
     boolean currentlyLogging = false;
@@ -50,20 +54,29 @@ public class LocationManagementService extends Service {
 
             ContentValues newValues = new ContentValues();
 
-            newValues.put(LocationContentProviderContract._ID, currentLocation._id);
-            newValues.put(LocationContentProviderContract.ALTITUDE, currentLocation.alt);
-            newValues.put(LocationContentProviderContract.LONGITUDE, currentLocation.longitude);
-            newValues.put(LocationContentProviderContract.LATITUDE, currentLocation.latitude);
-            newValues.put(LocationContentProviderContract.IMAGE_PATH, "null");
+            newValues.put(LocationsContentProviderContract._ID, currentLocation._id);
+            newValues.put(LocationsContentProviderContract.ALTITUDE, currentLocation.alt);
+            newValues.put(LocationsContentProviderContract.LONGITUDE, currentLocation.longitude);
+            newValues.put(LocationsContentProviderContract.LATITUDE, currentLocation.latitude);
+            newValues.put(LocationsContentProviderContract.IMAGE_PATH, "null");
 
-
-            getContentResolver().insert(LocationContentProviderContract.LOCATION_URI, newValues);
+            try {
+                Log.d("Next primary key", Integer.toString(currentLocation._id));
+                getContentResolver().insert(LocationsContentProviderContract.GENERAL_QUERY_URI, newValues);
+            }
+            catch (SQLException e){
+                Log.d("what?", "Thing");
+                e.printStackTrace();
+            }
         }
     }
     @Override
     public void onCreate() {
 
         messenger = new Messenger(new MyHandler());
+
+        // create the location listener
+        listener = new ALocationListener(getApplicationContext());
 
         receiver = new ServiceReceiver();
         intentFilter = new IntentFilter();
@@ -89,11 +102,10 @@ public class LocationManagementService extends Service {
                 case STOP_LOGGING:
 
                     // isLogging == 1 &&
-                    if(locationManager != null && listener != null){
+                    if (locationManager != null && listener != null) {
                         locationManager.removeUpdates(listener);
                         currentlyLogging = false;
                     }
-
                     break;
 
                 // tell
@@ -108,13 +120,34 @@ public class LocationManagementService extends Service {
 
                         // isLogging == 1 &&
                         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-                        listener = new ALocationListener(getApplicationContext());
+
                         // try {
                         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
                                 5, // minimum time interval between updates
                                 5, // minimum distance between updates, in metres
                                 listener);
                         currentlyLogging = true;
+                    }
+                    break;
+
+
+                case UPDATE_INSERT_KEY:
+                    if (listener != null) {
+
+                        // this will give the currently selected table, now need to find max primary key value in table
+                        // increment by one and hand to the listener
+
+                        Cursor cursor = getContentResolver().query(LocationsContentProviderContract.GET_HIGHEST_PRIMARY,
+                                null, null, null, null);
+
+                        if (cursor != null) {
+                            // get all the recipes in the database stored in the form of a hash map so can send back to main activity
+                            if (cursor.moveToFirst()) {
+                                int startingPrimaryKey = cursor.getInt(cursor.getColumnIndex(LocationsContentProviderContract._ID) + 1);
+                                listener.updateInsertKey(startingPrimaryKey);
+                            }
+                            // carry on from where we left off inserting
+                        }
                     }
                     break;
                 default:
@@ -127,7 +160,6 @@ public class LocationManagementService extends Service {
             }
         }
     }
-
     @Override
     public void onDestroy() {
         super.onDestroy();

@@ -74,6 +74,13 @@ public class ALocationListener implements LocationListener {
     }
 
     /**
+     * Change the value for _id so that new records are inserted into the correct place
+     */
+    public void updateInsertKey(int new_id){
+        this._id = new_id;
+    }
+
+    /**
      * This method calculates the speed of the user as they walk
      * speed = distance/time
      * @return

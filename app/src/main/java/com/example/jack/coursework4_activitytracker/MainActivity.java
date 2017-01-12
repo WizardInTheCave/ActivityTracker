@@ -2,11 +2,15 @@ package com.example.jack.coursework4_activitytracker;
 
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -19,6 +23,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
 
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
@@ -38,6 +44,8 @@ public class MainActivity extends AppCompatActivity {
     static final int SHOW_ON_MAP = 1;
 
     boolean isTracking = false;
+
+    static final int JOURNEY_NAME = 1;
 
     LineGraphSeries<DataPoint> series;
 
@@ -80,11 +88,10 @@ public class MainActivity extends AppCompatActivity {
         // intent.putExtra("locationData", locations);
         startActivityForResult(intent, SHOW_ON_MAP);
     }
+
     private void updateUI(){
 
     }
-
-
 
     /**
      * get updates on the location which we can use to generate graphs for the user
@@ -150,6 +157,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        getContentResolver().update(LocationsContentProviderContract.JOURNEY_NAMES_ADD_URI, null, null, null);
+
         // setContentView(R.layout.activity_maps);
 
         Intent initialBindIntent = new Intent(this, LocationManagementService.class);
@@ -160,11 +170,8 @@ public class MainActivity extends AppCompatActivity {
 
         replyMessenger = new Messenger(new MyHandler());
 
-
         // locations = savedInstanceState.get(LOCATION_ID);
         //times = savedInstanceState.getSerializable(TIMES_ID);
-
-
 
         receiver = new MainReceiver();
         intentFilter = new IntentFilter();
@@ -172,33 +179,124 @@ public class MainActivity extends AppCompatActivity {
         registerReceiver(receiver, intentFilter);
     }
 
+
+    private void stopTracking(){
+        Message message = Message.obtain(null, LocationManagementService.STOP_LOGGING, 0, 0);
+        sendMessageToService(message);
+
+        Button trackingButton = (Button)findViewById(R.id.trackingButton);
+        trackingButton.setText("Start Tracking");
+        isTracking = false;
+    }
+
+    private void startTracking(){
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            Message message = Message.obtain(null, LocationManagementService.START_LOGGING, 0, 0);
+            sendMessageToService(message);
+
+            Button trackingButton = (Button)findViewById(R.id.trackingButton);
+            trackingButton.setText("Stop Tracking");
+            isTracking = true;
+        }
+    }
     public void changeTrackingStatus(View v){
 
         if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
             ActivityCompat.requestPermissions( this, new String[] {  android.Manifest.permission.ACCESS_COARSE_LOCATION  },
                     LocationManagementService.MY_PERMISSION_COURSE_LOCATION_REQ_CODE );
         }
-
         if(isTracking) {
-            Message message = Message.obtain(null, LocationManagementService.STOP_LOGGING, 0, 0);
-            sendMessageToService(message);
-
-            Button trackingButton = (Button)findViewById(R.id.trackingButton);
-            trackingButton.setText("Start Tracking");
-            isTracking = false;
+            stopTracking();
         }
         // tell the service to stop logging our users gps coordinates
         else{
-            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                Message message = Message.obtain(null, LocationManagementService.START_LOGGING, 0, 0);
-                sendMessageToService(message);
-
-                Button trackingButton = (Button)findViewById(R.id.trackingButton);
-                trackingButton.setText("Stop Tracking");
-                isTracking = true;
-            }
+            startTracking();
         }
     }
+
+    /**
+     * load a journey that was previously recorded
+     */
+    public void loadPreviousJourney(View v){
+        Bundle bundle = new Bundle();
+        Intent intent = new Intent(MainActivity.this, LoadJourneyActivity.class);
+        intent.putExtras(bundle);
+        startActivityForResult(intent, JOURNEY_NAME);
+    }
+
+    /**
+     * We already have a default database we want to change the name of it so that we can store another one but reload it later
+     */
+    public void saveJourneyName(View v){
+
+        EditText journeyNameText = (EditText) findViewById(R.id.journeyNameText);
+        String journeyName = journeyNameText.getText().toString();
+
+        if(journeyName.contains(" ")){
+            // clear the text to indicate that the user has saved their journey
+            journeyNameText.setTextColor(Color.RED);
+            journeyNameText.setText("Sorry journey names must not contain spaces");
+        }else {
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(LocationsContentProviderContract.JOURNEY_NAMES_FIELD, journeyName);
+            getContentResolver().update(LocationsContentProviderContract.JOURNEY_NAMES_RENAME_URI, contentValues, null, null);
+
+            // clear the text to indicate that the user has saved their journey
+            journeyNameText.setText("");
+        }
+    }
+
+    /**
+     * Get the journey we have selected back from the LoadJourneyActivity
+     * @param requestCode
+     * @param resultCode
+     * @param data
+     */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        switch (requestCode) {
+            case JOURNEY_NAME:
+                if (resultCode == RESULT_OK) {
+
+                    // We now have the journey that we want to load from the database, so now update the content provider to
+                    // switch to this database so that until the user changes the database again it continues to work
+                    // with this one
+
+                    String selectedJourneyTitle = data.getStringExtra(LoadJourneyActivity.SELECTED_JOURNEY_TITLE);
+                    ContentValues contentValues = new ContentValues();
+
+                    // tell our service to stop tracking because new GPS coordinates are no longer applicable to this journey.
+                    stopTracking();
+
+                    // send message to location listener telling it to update the id values to the end of the table we have switched to +1
+                    // otherwise the system will try to add valus into the currently selected table with primary key indexes for the previous table
+                    Message message = Message.obtain(null, LocationManagementService.UPDATE_INSERT_KEY, 0, 0);
+                    sendMessageToService(message);
+
+                    contentValues.put(LocationsContentProviderContract.JOURNEY_NAMES_FIELD, selectedJourneyTitle);
+                    getContentResolver().update(LocationsContentProviderContract.CHANGE_CURRENTLY_SELECTED_TABLE_URI, contentValues, null, null);
+
+
+
+                    // since we have changed the journey refresh the graphs
+                    GraphView altVsTime = (GraphView)findViewById(R.id.elevationOverTimeGraph);
+                    altVsTime.removeAllSeries();
+
+                    GraphView speedVsTime = (GraphView)findViewById(R.id.speedOverTimeGraph);
+                    speedVsTime.removeAllSeries();
+
+                } else if (resultCode == RESULT_CANCELED) {
+                    Log.e("RequestCode error", "Recieved an error as a return when browsing for an previous journey");
+                }
+                break;
+        }
+    }
+
+    /**
+     * Send a message to the LocationManagementService using a parcel
+     * @param message
+     */
     private void sendMessageToService(Message message){
         ListenerParcel parcel = new ListenerParcel();
 

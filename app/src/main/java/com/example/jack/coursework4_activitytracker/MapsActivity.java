@@ -29,6 +29,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.net.URI;
 import java.util.ArrayList;
 
 public class MapsActivity extends android.support.v4.app.FragmentActivity implements
@@ -42,7 +43,6 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
 
     Marker currentMarker = null;
 
-    boolean mapLoaded = false;
 
     IntentFilter intentFilter;
     MapsReceiver receiver;
@@ -131,11 +131,11 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
 
         if(currentMarker != null) {
             currentMarker.remove();
-            String whereClause = LocationContentProviderContract._ID + "= ?";
+            String whereClause = LocationsContentProviderContract._ID + "= ?";
             String[] whereArgs = new String[]{currentMarker.getTitle()};
 
             // getContentResolver().update(LocationContentProviderContract.LOCATION_URI, contentValues ,whereClause, whereArgs);
-            getContentResolver().delete(LocationContentProviderContract.LOCATION_URI, whereClause, whereArgs);
+            getContentResolver().delete(LocationsContentProviderContract.GENERAL_QUERY_URI, whereClause, whereArgs);
         }
 
     }
@@ -154,7 +154,7 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
         String whereClause = null; // LocationContentProviderContract._ID + "=?";
         String[] whereArgs = null; // new String[]{"*"};
 
-        getContentResolver().delete(LocationContentProviderContract.LOCATION_URI, whereClause, whereArgs);
+        getContentResolver().delete(LocationsContentProviderContract.GENERAL_QUERY_URI, whereClause, whereArgs);
     }
 
     /**
@@ -229,14 +229,6 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
     }
 
     /**
-     * run this code when the map is done being loaded
-     */
-//    @Override
-//    public void onMapLoaded() {
-//
-//    }
-
-    /**
      * Get an zoomed in image of the marker
      * @return Uri for the image
      */
@@ -278,13 +270,14 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
                     });
                 }
             });
-            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(marker.getPosition(), 8));
+
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(marker.getPosition(), 15));
         }else{
             currentImage = imagePath;
             updateUI();
         }
     }
-//
+
 //    /**
 //     * Checks if the app has permission to write to device storage
 //     *
@@ -314,13 +307,17 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
         public void onReceive(Context context, Intent intent) {
 
             // get the latest values from the ALocationListener activity
-//            int _id = intent.getIntExtra("_id", 0);
-//            double alt = intent.getDoubleExtra("Altitude", 0);
-//            double latitude = intent.getDoubleExtra("Latitude", 0);
-//            double longitude = intent.getDoubleExtra("Longitude", 0);
-
             GoogleMapPos currentLocation = (GoogleMapPos)intent.getExtras().getSerializable("Location");
             addMarker(currentLocation);
+
+            // move the camera to keep track of the latest marker that has been placed
+            try {
+                googleMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(currentLocation.latitude, currentLocation.longitude)));
+            }
+            catch (Exception e){
+               e.printStackTrace();
+            }
+
             Log.d("something happened", "something seems to have happened");
         }
     }
@@ -352,88 +349,39 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
      */
     @Override
     public void onMapReady(GoogleMap googleMap) {
-
-
-        // if(mapLoaded) {
         googleMap.setOnMarkerClickListener(this);
 
         this.googleMap = googleMap;
-
         this.markers = new ArrayList<>();
 
         ArrayList<GoogleMapPos> locations = loadFromDB();
 
-        // add all the markers in the database from the start
+        if(locations.size() > 0) {
+            // add all the markers in the database from the start
+            for (GoogleMapPos loc : locations) {
+                addMarker(loc);
+            }
 
-        for (GoogleMapPos loc : locations) {
-            addMarker(loc);
+            // zoom to a reasonable position
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(locations.get(0).latitude, locations.get(0).longitude), 5));
         }
-        mapLoaded = false;
-
     }
         // }
         //LatLng lastLatLang = null// updatePoints = new UpdatePoints();
-//        try {
-//            googleMap.moveCamera(CameraUpdateFactory.newLatLng(lastLatLang));
-//        }
-//        catch (Exception e){
-//            e.printStackTrace();
-//        }
-
 
     /**
      * when we get an image record for a marker we want to add it to the back end database managed by the content provider
      */
     private void addImageToDB(){
 
-        // Update "Locations"
-        // SET ImagePath=currentImage
-        // WHERE _id=Integer.parseInt(currentTitle)
-
-        String whereClause = LocationContentProviderContract._ID + "= ?";
+        String whereClause = LocationsContentProviderContract._ID + "= ?";
         String[] whereArgs = new String[]{currentTitle};
                 // new String[]{LocationContentProviderContract.IMAGE_PATH + "=" + currentImage};
 
         ContentValues contentValues = new ContentValues();
-        contentValues.put(LocationContentProviderContract.IMAGE_PATH, "\"" + currentImage + "\""); //whatever column you want to update, I dont know the name of it
+        contentValues.put(LocationsContentProviderContract.IMAGE_PATH, "\"" + currentImage + "\"");
 
-        getContentResolver().update(LocationContentProviderContract.LOCATION_URI, contentValues ,whereClause, whereArgs);
-        // ...//any other values you want to update too
-
-//        getContentResolver().update(HabitTable.CONTENT_URI,
-//                values,
-//                HabitTable.ID+"=?",
-//                new String[] {String.valueOf(id)}); //id is the id of the row you wan to update
-
-
-
-
-        // getContentResolver().query(LocationContentProviderContract.LOCATION_URI)
-
-
-        final String[] projection = {LocationContentProviderContract._ID, LocationContentProviderContract.ALTITUDE, LocationContentProviderContract.LATITUDE, LocationContentProviderContract.LONGITUDE,
-        LocationContentProviderContract.IMAGE_PATH};
-
-        Cursor cursor = getContentResolver().query(LocationContentProviderContract.LOCATION_URI,
-                projection,
-                null, null, null, null);
-
-        if (cursor != null) {
-            // get all the recipes in the database stored in the form of a hash map so can send back to main activity
-            if (cursor.moveToFirst()) {
-                do {
-
-                    String _id = Integer.toString(cursor.getInt(cursor.getColumnIndex(LocationContentProviderContract._ID)));
-                    String alt = Double.toString(cursor.getDouble(cursor.getColumnIndex(LocationContentProviderContract.ALTITUDE)));
-                    String latitude = Double.toString(cursor.getDouble(cursor.getColumnIndex(LocationContentProviderContract.LATITUDE)));
-                    String longitude = Double.toString(cursor.getDouble(cursor.getColumnIndex(LocationContentProviderContract.LONGITUDE)));
-                    String imagePath = cursor.getString(cursor.getColumnIndex(LocationContentProviderContract.IMAGE_PATH));
-
-
-                } while (cursor.moveToNext());
-            }
-            cursor.close();
-        }
+        getContentResolver().update(LocationsContentProviderContract.GENERAL_QUERY_URI, contentValues ,whereClause, whereArgs);
     }
 
     /**
@@ -443,9 +391,11 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
 
         ArrayList<GoogleMapPos> locations = new ArrayList<>();
 
-        final String[] projection = {LocationContentProviderContract._ID, LocationContentProviderContract.ALTITUDE, LocationContentProviderContract.LATITUDE, LocationContentProviderContract.LONGITUDE};
+        final String[] projection = {LocationsContentProviderContract._ID, LocationsContentProviderContract.ALTITUDE, LocationsContentProviderContract.LATITUDE, LocationsContentProviderContract.LONGITUDE};
 
-        Cursor cursor = getContentResolver().query(LocationContentProviderContract.LOCATION_URI,
+        // Uri currentJourneyUri = Uri.parse("content://\"+AUTHORITY+\"/Journeys");
+
+        Cursor cursor = getContentResolver().query(LocationsContentProviderContract.GENERAL_QUERY_URI,
                 projection,
                 null, null, null, null);
 
@@ -453,10 +403,10 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
             // get all the recipes in the database stored in the form of a hash map so can send back to main activity
             if (cursor.moveToFirst()) {
                 do {
-                    int _id = cursor.getInt(cursor.getColumnIndex(LocationContentProviderContract._ID));
-                    double alt = cursor.getDouble(cursor.getColumnIndex(LocationContentProviderContract.ALTITUDE));
-                    double latitude = cursor.getDouble(cursor.getColumnIndex(LocationContentProviderContract.LATITUDE));
-                    double longitude = cursor.getDouble(cursor.getColumnIndex(LocationContentProviderContract.LONGITUDE));
+                    int _id = cursor.getInt(cursor.getColumnIndex(LocationsContentProviderContract._ID));
+                    double alt = cursor.getDouble(cursor.getColumnIndex(LocationsContentProviderContract.ALTITUDE));
+                    double latitude = cursor.getDouble(cursor.getColumnIndex(LocationsContentProviderContract.LATITUDE));
+                    double longitude = cursor.getDouble(cursor.getColumnIndex(LocationsContentProviderContract.LONGITUDE));
 
                     locations.add(new GoogleMapPos(_id, alt, latitude, longitude, -1));
 
@@ -464,6 +414,8 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
             }
             cursor.close();
         }
+
+
         return locations;
     }
 

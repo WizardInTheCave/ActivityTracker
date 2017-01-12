@@ -10,7 +10,9 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class SQLManager extends SQLiteOpenHelper {
 
-    public static final String RECIPE_TABLE_NAME = "Locations";
+    // public static final String JOURNEY_TABLE_NAME = "Locations";
+
+    //public static final String JOURNEYS = "Journeys";
 
     public SQLManager(Context context, String name, SQLiteDatabase.CursorFactory factory,
                       int version) {
@@ -23,12 +25,12 @@ public class SQLManager extends SQLiteOpenHelper {
      */
     @Override
     public void onCreate(SQLiteDatabase dataBase) {
-        dataBase.execSQL("CREATE TABLE " + RECIPE_TABLE_NAME + "(" +
-                "_id INTEGER PRIMARY KEY, " +
-                "Altitude FLOAT, " +
-                "Longitude FLOAT," +
-                "Latitude FLOAT," +
-                "ImagePath TEXT" +
+
+        // this is a table which stores the names of all the walks so we can look one up at a later date
+        // I essentially just want a list of strings that is stored permanently and can be used as a lookup
+        // for the other tables
+        dataBase.execSQL("CREATE TABLE " + LocationsContentProviderContract.JOURNEY_NAMES_TABLE + "(" +
+                LocationsContentProviderContract.JOURNEY_NAMES_FIELD + " TEXT PRIMARY KEY" +
                 ");");
     }
 
@@ -40,7 +42,7 @@ public class SQLManager extends SQLiteOpenHelper {
      */
     @Override
     public void onUpgrade(SQLiteDatabase dataBase, int oldVersion, int newVersion) {
-        dataBase.execSQL("DROP TABLE IF EXISTS " + RECIPE_TABLE_NAME);
+        dataBase.execSQL("DROP TABLE IF EXISTS " + LocationsContentProviderContract.JOURNEY_NAMES_TABLE);
         onCreate(dataBase);
     }
 
