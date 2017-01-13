@@ -50,14 +50,6 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentStart="true" />
 
-    <TextView
-        android:text="Name your Journey for later:"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/nameJourneyView"
-        android:layout_above="@+id/journeyNameText"
-        android:layout_alignStart="@+id/journeyNameText" />
-
     <Button
         android:text="show Map"
         android:layout_width="wrap_content"
@@ -67,26 +59,6 @@
         android:layout_alignParentTop="true"
         android:layout_alignEnd="@+id/loadWalkButton" />
 
-    <EditText
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:inputType="textPersonName"
-        android:text="Journey Name"
-        android:ems="10"
-        android:id="@+id/journeyNameText"
-        android:layout_above="@+id/saveButton"
-        android:layout_alignParentStart="true" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/saveButton"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentStart="true"
-        tools:text="Save Journey"
-        android:onClick="saveJourneyName"
-        android:text="Save Journey" />
-
     <Button
         android:text="Load Previous Journey"
         android:layout_width="wrap_content"
@@ -94,6 +66,39 @@
         android:id="@+id/loadWalkButton"
         android:onClick="loadPreviousJourney"
         android:layout_alignParentBottom="true"
-        android:layout_toEndOf="@+id/trackingButton" />
+        android:layout_alignParentEnd="true"
+        android:layout_toEndOf="@+id/nameJourneyView"
+        android:layout_marginStart="17dp" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/saveButton"
+        tools:text="Save and close Journey"
+        android:onClick="saveJourneyName"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignTop="@+id/loadWalkButton"
+        android:layout_alignEnd="@+id/nameJourneyView"
+        android:text="Save and close Journey" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="textPersonName"
+        android:text="Journey Name"
+        android:ems="10"
+        android:id="@+id/journeyNameText"
+        android:layout_above="@+id/loadWalkButton"
+        android:layout_alignParentStart="true"
+        android:layout_marginBottom="14dp" />
+
+    <TextView
+        android:text="Name your Journey for later:"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/nameJourneyView"
+        android:layout_above="@+id/journeyNameText"
+        android:layout_alignParentStart="true" />
 
 </RelativeLayout>

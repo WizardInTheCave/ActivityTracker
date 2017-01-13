@@ -181,6 +181,10 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void stopTracking(){
+        if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
+            ActivityCompat.requestPermissions( this, new String[] {  android.Manifest.permission.ACCESS_COARSE_LOCATION  },
+                    LocationManagementService.MY_PERMISSION_COURSE_LOCATION_REQ_CODE );
+        }
         Message message = Message.obtain(null, LocationManagementService.STOP_LOGGING, 0, 0);
         sendMessageToService(message);
 
@@ -190,6 +194,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startTracking(){
+        if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
+            ActivityCompat.requestPermissions( this, new String[] {  android.Manifest.permission.ACCESS_COARSE_LOCATION  },
+                    LocationManagementService.MY_PERMISSION_COURSE_LOCATION_REQ_CODE );
+        }
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             Message message = Message.obtain(null, LocationManagementService.START_LOGGING, 0, 0);
             sendMessageToService(message);
@@ -200,11 +208,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     public void changeTrackingStatus(View v){
-
-        if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
-            ActivityCompat.requestPermissions( this, new String[] {  android.Manifest.permission.ACCESS_COARSE_LOCATION  },
-                    LocationManagementService.MY_PERMISSION_COURSE_LOCATION_REQ_CODE );
-        }
         if(isTracking) {
             stopTracking();
         }
@@ -231,18 +234,31 @@ public class MainActivity extends AppCompatActivity {
 
         EditText journeyNameText = (EditText) findViewById(R.id.journeyNameText);
         String journeyName = journeyNameText.getText().toString();
-
-        if(journeyName.contains(" ")){
+        
+        // check the name input
+        if(journeyName.contains(" ")) {
             // clear the text to indicate that the user has saved their journey
             journeyNameText.setTextColor(Color.RED);
             journeyNameText.setText("Sorry journey names must not contain spaces");
-        }else {
+        }
+        else if(journeyName.isEmpty()){
+            journeyNameText.setTextColor(Color.RED);
+            journeyNameText.setText("Must provide a name");
+        }
+        else {
             ContentValues contentValues = new ContentValues();
             contentValues.put(LocationsContentProviderContract.JOURNEY_NAMES_FIELD, journeyName);
             getContentResolver().update(LocationsContentProviderContract.JOURNEY_NAMES_RENAME_URI, contentValues, null, null);
 
             // clear the text to indicate that the user has saved their journey
             journeyNameText.setText("");
+
+            // switch back to the orignal journey and delete all the markers in original since we have now saved the journey and so want
+            // to work with a new one containing no prior locations
+            contentValues = new ContentValues();
+            contentValues.put(LocationsContentProviderContract.JOURNEY_NAMES_FIELD, LocationsContentProviderContract.DEFAULT_JOURNEY_TABLE);
+            getContentResolver().update(LocationsContentProviderContract.CHANGE_CURRENTLY_SELECTED_TABLE_URI, contentValues, null, null);
+            getContentResolver().delete(LocationsContentProviderContract.GENERAL_QUERY_URI, null, null);
         }
     }
 
@@ -264,7 +280,7 @@ public class MainActivity extends AppCompatActivity {
                     // with this one
 
                     String selectedJourneyTitle = data.getStringExtra(LoadJourneyActivity.SELECTED_JOURNEY_TITLE);
-                    ContentValues contentValues = new ContentValues();
+
 
                     // tell our service to stop tracking because new GPS coordinates are no longer applicable to this journey.
                     stopTracking();
@@ -274,6 +290,7 @@ public class MainActivity extends AppCompatActivity {
                     Message message = Message.obtain(null, LocationManagementService.UPDATE_INSERT_KEY, 0, 0);
                     sendMessageToService(message);
 
+                    ContentValues contentValues = new ContentValues();
                     contentValues.put(LocationsContentProviderContract.JOURNEY_NAMES_FIELD, selectedJourneyTitle);
                     getContentResolver().update(LocationsContentProviderContract.CHANGE_CURRENTLY_SELECTED_TABLE_URI, contentValues, null, null);
 

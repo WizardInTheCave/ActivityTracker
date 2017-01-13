@@ -8,6 +8,8 @@ import android.net.Uri;
 
 public class LocationsContentProviderContract {
 
+    public static final String DEFAULT_JOURNEY_TABLE = "Original";
+
     // Fields for rows in a specific journey table
     public static final String _ID = "_id";
     public static final String ALTITUDE = "Altitude";

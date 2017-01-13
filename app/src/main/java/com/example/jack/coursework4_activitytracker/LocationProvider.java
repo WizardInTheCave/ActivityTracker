@@ -50,7 +50,7 @@ public class LocationProvider extends ContentProvider {
     String journeyTableName = DEFAULT_TABLE_NAME;
 
     /**
-     * re name the default journey table that has been made
+     * re name the default journey table that has been made called "Original" to some other name that the user would like
      */
     public void renameCurrentJourney(Uri uri, ContentValues values){
 
@@ -69,10 +69,16 @@ public class LocationProvider extends ContentProvider {
         long id = dataBase.insert(LocationsContentProviderContract.JOURNEY_NAMES_TABLE, null, contentValues);
         Uri pathWithInsertRef = ContentUris.withAppendedId(uri, id);
         getContext().getContentResolver().notifyChange(pathWithInsertRef, null);
-
-        journeyTableName = journeyName;
-
         dataBase.close();
+
+        // Now need to make a new original table having renamed the previous one so the user can start a fresh journey.
+        makeOriginalJourneyTable(uri, values);
+        journeyTableName = DEFAULT_TABLE_NAME;
+
+        // need to make a new "original" table so operation can carry on as per usual
+
+
+
     }
 
     /**
@@ -95,43 +101,52 @@ public class LocationProvider extends ContentProvider {
 
         return count > 0;
     }
-    /**
-     * Add a database to the contnet provider representing a new journey.
-     * also need to insert this database into the main database for looking up the different journeys
-     */
-    public void makeNewJourney(Uri uri, ContentValues values){
 
+    /**
+     * Called when the application starts, sets up the "Original" table to begin logging the first journey in and adds it to
+     * lookup table so it can be found again.
+     * @param uri
+     * @param values
+     */
+    public void initialiseOriginalJourney(Uri uri, ContentValues values){
+
+        makeOriginalJourneyTable(uri, values);
+
+        if (tableExists(DEFAULT_TABLE_NAME)) {
+            SQLiteDatabase dataBase = dbHelper.getWritableDatabase();
+
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(LocationsContentProviderContract.JOURNEY_NAMES_FIELD, DEFAULT_TABLE_NAME);
+
+            long id = dataBase.insert(LocationsContentProviderContract.JOURNEY_NAMES_TABLE, null, contentValues);
+
+            Uri pathWithInsertRef = ContentUris.withAppendedId(uri, id);
+            getContext().getContentResolver().notifyChange(pathWithInsertRef, null);
+
+            dataBase.close();
+        }
+    }
+
+    /**
+     * Make a replacement for the "Original" table once the previous "Original"
+     */
+    private void makeOriginalJourneyTable(Uri uri, ContentValues values){
 
         // check if default table already exists
-        //try {
-            if (!tableExists(DEFAULT_TABLE_NAME)) {
-
-                SQLiteDatabase dataBase = dbHelper.getWritableDatabase();
-                // there was no error so table already exists
-                // make the new table for our journey
-                dataBase.execSQL(
-                        "CREATE TABLE " + DEFAULT_TABLE_NAME + "(" +
-                                "_id INTEGER PRIMARY KEY, " +
-                                "Altitude FLOAT, " +
-                                "Longitude FLOAT, " +
-                                "Latitude FLOAT, " +
-                                "ImagePath TEXT" +
-                                ");");
-
-                ContentValues contentValues = new ContentValues();
-                contentValues.put(LocationsContentProviderContract.JOURNEY_NAMES_FIELD, "Original");
-
-                long id = dataBase.insert(LocationsContentProviderContract.JOURNEY_NAMES_TABLE, null, contentValues);
-                dataBase.close();
-
-                Uri pathWithInsertRef = ContentUris.withAppendedId(uri, id);
-                getContext().getContentResolver().notifyChange(pathWithInsertRef, null);
-
-                // Uri pathWithInsertRef = ContentUris.withAppendedId(uri, id);
-                // getContext().getContentResolver().notifyChange(pathWithInsertRef, null);
-                // return pathWithInsertRef;
-                // }
-            }
+        if (!tableExists(DEFAULT_TABLE_NAME)) {
+            SQLiteDatabase dataBase = dbHelper.getWritableDatabase();
+            // there was no error so table already exists
+            // make the new table for our journey
+            dataBase.execSQL(
+                    "CREATE TABLE " + DEFAULT_TABLE_NAME + "(" +
+                            "_id INTEGER PRIMARY KEY, " +
+                            "Altitude FLOAT, " +
+                            "Longitude FLOAT, " +
+                            "Latitude FLOAT, " +
+                            "ImagePath TEXT" +
+                            ");");
+            dataBase.close();
+        }
         //}
         // were unable to create the table
 //        catch(SQLException createTableException){
@@ -141,7 +156,7 @@ public class LocationProvider extends ContentProvider {
 
     @Override
     public boolean onCreate() {
-        this.dbHelper = new SQLManager(this.getContext(), "LocationDB15", null, 6);
+        this.dbHelper = new SQLManager(this.getContext(), "testDB2", null, 6);
         return true;
     }
 
@@ -209,7 +224,7 @@ public class LocationProvider extends ContentProvider {
                 break;
 
             case ADD_NEW_JOURNEY:
-                makeNewJourney(uri, contentValues);
+                initialiseOriginalJourney(uri, contentValues);
                 break;
 
             case RENAME_JOURNEY:
@@ -275,11 +290,11 @@ public class LocationProvider extends ContentProvider {
     @Override
     public int delete(Uri uri, String where, String[] whereClause) {
 
-        SQLiteDatabase dataBase = dbHelper.getWritableDatabase();
-
         switch(uriMatcher.match(uri))
         {
             case ACT_ON_CURRENTLY_SELECTED:
+
+                SQLiteDatabase dataBase = dbHelper.getWritableDatabase();
                 long id = dataBase.delete(journeyTableName, where, whereClause);
                 dataBase.close();
 
