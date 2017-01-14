@@ -45,6 +45,8 @@ public class LocationsContentProviderContract {
     public static final Uri JOURNEY_NAMES_ADD_URI = Uri.parse("content://"+AUTHORITY+"/Journeys/Add");
     public static final Uri JOURNEY_NAMES_RENAME_URI = Uri.parse("content://"+AUTHORITY+"/Journeys/Rename");
 
+    public static final Uri GET_CURRENTLY_SELECTED_TABLE = Uri.parse("content://"+AUTHORITY+"/GetCurrentlySelectedTable");
+
     // public static final String AUTHORITY = "com.example.jack.coursework4_activitytracker.JourneyProvider";
     // public static final String AUTHORITY = "com.example.jack.coursework4_activitytracker.TripsProvider";
 

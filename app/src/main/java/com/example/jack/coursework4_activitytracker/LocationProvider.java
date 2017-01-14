@@ -5,9 +5,12 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.UriMatcher;
 import android.database.Cursor;
+import android.database.MatrixCursor;
+import android.database.MergeCursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
+import android.util.Log;
 
 /**
  * Created by Jack on 22/12/2016.
@@ -17,6 +20,7 @@ public class LocationProvider extends ContentProvider {
 
     private SQLManager dbHelper = null;
     private static final UriMatcher uriMatcher;
+
 
     static {
         uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
@@ -31,7 +35,7 @@ public class LocationProvider extends ContentProvider {
         uriMatcher.addURI(LocationsContentProviderContract.AUTHORITY, "Journeys/Add", 5);
         uriMatcher.addURI(LocationsContentProviderContract.AUTHORITY, "Journeys/Rename", 6);
 
-        // uriMatcher.addURI(LocationContentProviderContract., "Journeys", 2);
+        uriMatcher.addURI(LocationsContentProviderContract.AUTHORITY, "GetCurrentlySelectedTable", 7);
     }
 
     final static int ACT_ON_CURRENTLY_SELECTED = 1;
@@ -41,6 +45,7 @@ public class LocationProvider extends ContentProvider {
     final static int QUERY_JOURNEYS = 4;
     final static int ADD_NEW_JOURNEY = 5;
     final static int RENAME_JOURNEY = 6;
+    final static int GET_CURRENTLY_SELECTED = 7;
 
 
     // the name given to tables when they are first created
@@ -54,31 +59,38 @@ public class LocationProvider extends ContentProvider {
      */
     public void renameCurrentJourney(Uri uri, ContentValues values){
 
-
-        String journeyName =  (String)values.get("JourneyName");
-
         SQLiteDatabase dataBase = dbHelper.getWritableDatabase();
 
-        // ALTER TABLE orig_table_name RENAME TO tmp_table_name;
-        dataBase.execSQL("ALTER TABLE " + "\"" + journeyTableName + "\"" + " RENAME TO " + "\"" + journeyName + "\"");
+        try {
+            String newName = (String) values.get("JourneyName");
 
-        // now the name of the able has been altered it needs to be added to the lookup table
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(LocationsContentProviderContract.JOURNEY_NAMES_FIELD, journeyName);
+            // rename the table we were currently working with to the new name the user has provided
+            dataBase.execSQL("ALTER TABLE " + "\"" + journeyTableName + "\"" + " RENAME TO " + "\"" + newName + "\"");
 
-        long id = dataBase.insert(LocationsContentProviderContract.JOURNEY_NAMES_TABLE, null, contentValues);
-        Uri pathWithInsertRef = ContentUris.withAppendedId(uri, id);
-        getContext().getContentResolver().notifyChange(pathWithInsertRef, null);
-        dataBase.close();
 
-        // Now need to make a new original table having renamed the previous one so the user can start a fresh journey.
-        makeOriginalJourneyTable(uri, values);
-        journeyTableName = DEFAULT_TABLE_NAME;
+            // now the name of the able has been altered it needs to be added to the lookup table
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(LocationsContentProviderContract.JOURNEY_NAMES_FIELD, newName);
+
+            // need to remove the old name from the lookup table.
+            dataBase.delete(LocationsContentProviderContract.JOURNEY_NAMES_TABLE,
+                    LocationsContentProviderContract.JOURNEY_NAMES_FIELD + " = " + "?", new String[]{journeyTableName});
+
+            // insert the new table name into the lookup table.
+            long id = dataBase.insert(LocationsContentProviderContract.JOURNEY_NAMES_TABLE, null, contentValues);
+            Uri pathWithInsertRef = ContentUris.withAppendedId(uri, id);
+            getContext().getContentResolver().notifyChange(pathWithInsertRef, null);
+            dataBase.close();
+
+            // Now need to make a new original table having renamed the previous one so the user can start a fresh journey.
+            makeOriginalJourneyTable(uri, values);
+            journeyTableName = DEFAULT_TABLE_NAME;
+        }
+        catch (SQLException e){
+            Log.e("Journey name conflict", "cannot insert a journey with a name that already exists");
+        }
 
         // need to make a new "original" table so operation can carry on as per usual
-
-
-
     }
 
     /**
@@ -86,19 +98,15 @@ public class LocationProvider extends ContentProvider {
      * @param table
      * @return
      */
-    private boolean tableExists(String table){
+    private boolean tableExists(String table, SQLiteDatabase dataBase){
 
-        SQLiteDatabase dataBase = dbHelper.getWritableDatabase();
         Cursor cursor = dataBase.rawQuery("SELECT COUNT(*) FROM sqlite_master WHERE type = ? AND name = ?", new String[] {"table", table});
-
         if (!cursor.moveToFirst()) {
             cursor.close();
             return false;
         }
         int count = cursor.getInt(0);
         cursor.close();
-        dataBase.close();
-
         return count > 0;
     }
 
@@ -110,21 +118,26 @@ public class LocationProvider extends ContentProvider {
      */
     public void initialiseOriginalJourney(Uri uri, ContentValues values){
 
+
         makeOriginalJourneyTable(uri, values);
 
-        if (tableExists(DEFAULT_TABLE_NAME)) {
-            SQLiteDatabase dataBase = dbHelper.getWritableDatabase();
+        SQLiteDatabase dataBase = dbHelper.getWritableDatabase();
+
+        if (tableExists(DEFAULT_TABLE_NAME, dataBase)) {
+
 
             ContentValues contentValues = new ContentValues();
             contentValues.put(LocationsContentProviderContract.JOURNEY_NAMES_FIELD, DEFAULT_TABLE_NAME);
 
-            long id = dataBase.insert(LocationsContentProviderContract.JOURNEY_NAMES_TABLE, null, contentValues);
+            // use conflict ignore so there isn't a problem if the record already exists in the lookup.
+            long id = dataBase.insertWithOnConflict(LocationsContentProviderContract.JOURNEY_NAMES_TABLE,
+                    null, contentValues, SQLiteDatabase.CONFLICT_IGNORE);
 
             Uri pathWithInsertRef = ContentUris.withAppendedId(uri, id);
             getContext().getContentResolver().notifyChange(pathWithInsertRef, null);
-
-            dataBase.close();
         }
+        dataBase.close();
+
     }
 
     /**
@@ -132,31 +145,34 @@ public class LocationProvider extends ContentProvider {
      */
     private void makeOriginalJourneyTable(Uri uri, ContentValues values){
 
-        // check if default table already exists
-        if (!tableExists(DEFAULT_TABLE_NAME)) {
-            SQLiteDatabase dataBase = dbHelper.getWritableDatabase();
-            // there was no error so table already exists
-            // make the new table for our journey
-            dataBase.execSQL(
-                    "CREATE TABLE " + DEFAULT_TABLE_NAME + "(" +
-                            "_id INTEGER PRIMARY KEY, " +
-                            "Altitude FLOAT, " +
-                            "Longitude FLOAT, " +
-                            "Latitude FLOAT, " +
-                            "ImagePath TEXT" +
-                            ");");
-            dataBase.close();
+        SQLiteDatabase dataBase = dbHelper.getWritableDatabase();
+
+        // check if default table already exists if it does because it wasn't deleted from a previous running of the
+        // application then we want to delete it.
+        if (tableExists(DEFAULT_TABLE_NAME, dataBase)) {
+            dataBase.execSQL("DROP TABLE " + DEFAULT_TABLE_NAME);
         }
-        //}
-        // were unable to create the table
-//        catch(SQLException createTableException){
-//            throw createTableException;
-//        }
+        // there was no error so table already exists
+        // make the new table for our journey
+        dataBase.execSQL(
+                "CREATE TABLE " + DEFAULT_TABLE_NAME + "(" +
+                        "_id INTEGER PRIMARY KEY, " +
+                        "Altitude FLOAT, " +
+                        "Longitude FLOAT, " +
+                        "Latitude FLOAT, " +
+                        "ImagePath TEXT" +
+                        ");");
+
+        dataBase.close();
     }
 
+    /**
+     * When the content provider is first created make a manager with a database
+     * @return
+     */
     @Override
     public boolean onCreate() {
-        this.dbHelper = new SQLManager(this.getContext(), "testDB2", null, 6);
+        this.dbHelper = new SQLManager(this.getContext(), "testDB5", null, 6);
         return true;
     }
 
@@ -178,33 +194,29 @@ public class LocationProvider extends ContentProvider {
     @Override
     public Uri insert(Uri uri, ContentValues values){
 
-        try {
-            // if this specific table we want to insert a record into exists then perform the insert
-            if(tableExists(journeyTableName)) {
-
-                SQLiteDatabase dataBase = dbHelper.getWritableDatabase();
-
-                long id = dataBase.insert(journeyTableName, null, values);
-                dataBase.close();
-
+        SQLiteDatabase dataBase = dbHelper.getWritableDatabase();
+        // if this specific table we want to insert a record into exists then perform the insert
+        if(tableExists(journeyTableName, dataBase)) {
+            try {
+                long id = dataBase.insertOrThrow(journeyTableName, null, values);
                 Uri pathWithInsertRef = ContentUris.withAppendedId(uri, id);
                 getContext().getContentResolver().notifyChange(pathWithInsertRef, null);
                 return pathWithInsertRef;
             }
-            else{
-                throw new SQLException("Cannot find table we are trying to insert into");
+            catch (Exception e){
+                Log.d("Insert Key", "problem with retrieved insert key, will move to next one and eveything carries on fine");
             }
         }
-        catch (SQLException e){
-            throw e;
-        }
+        dataBase.close();
+        return null;
     }
+
 
     /**
      * Want the ability to update primarily to add images of the locations
-     * @param uri
-     * @param whereClause
-     * @param whereArgs the values we are using as arguments for the update where clause
+     * @param uri The URI to the table that we want to run the update on.
+     * @param whereClause the where condition applied when running the SQL update statement.
+     * @param whereArgs the values we are using as arguments for the update where clause.
      * @return
      */
     @Override
@@ -241,61 +253,80 @@ public class LocationProvider extends ContentProvider {
             default:
                 throw new SQLException("Cannot use this URL with update method");
 
-                // here we want to query the main journeys table to get all the journeys
-                // update main name
-                // want to add a new default table
         }
         dataBase.close();
 
-        // dataBase.execSQL("UPDATE Locations SET ImagePath=\"/mnt/sdcard/map_0.png\" WHERE _id=0");
         return 0;
     }
 
+    /**
+     * Want to run a query on a table in the database
+     * @param uri The URI to the table that we want to run the update on.
+     * @param tableColumns columns we want to retrieve from our query, in SQL terms what we are selecting
+     * @param whereCaluse the where condition applied when running the SQL query statement.
+     * @param whereArgs the values we are using as arguments for the update where clause.
+     * @param sortOrder the other
+     * @return database cursor object which can be iterated through to get all values in the table
+     */
     @Override
     public Cursor query(Uri uri, String[] tableColumns, String whereCaluse, String[] whereArgs, String sortOrder) {
 
         SQLiteDatabase dataBase = dbHelper.getWritableDatabase();
 
         Cursor returnCursor = null;
-        switch(uriMatcher.match(uri))
-        {
-            case ACT_ON_CURRENTLY_SELECTED:
 
+        switch(uriMatcher.match(uri)) {
+            case ACT_ON_CURRENTLY_SELECTED:
                 // here we want to query based on the journey the user has selected
                 returnCursor = dataBase.query(journeyTableName, tableColumns, whereCaluse, whereArgs, null, null, sortOrder);
-            break;
+                break;
             case QUERY_JOURNEYS:
                 // here we want to query the main journeys table to get all the journeys
                 returnCursor = dataBase.query(LocationsContentProviderContract.JOURNEY_NAMES_TABLE,
                         tableColumns, whereCaluse, whereArgs, null, null, sortOrder);
 
-            break;
-
+                break;
 
             case GET_HIGHEST_PRIMARY_KEY_SELECTED:
-                String[] projection = {LocationsContentProviderContract._ID};
                 String bespokeWhereCaluse = "SELECT MAX(_id) FROM " + journeyTableName;
 
                 returnCursor = dataBase.rawQuery(bespokeWhereCaluse, null);
-//                returnCursor = dataBase.query(journeyTableName,
-//                        tableColumns, bespokeWhereCaluse, null, null, null, sortOrder);
-
                 break;
             default:
                 throw new SQLException("Cannot use this URL with query method");
+
+            case GET_CURRENTLY_SELECTED:
+
+                // want to store the current table that is selected within a cursor so it can be returned as a query
+                MatrixCursor matrixCursor = new MatrixCursor(new String[]{LocationsContentProviderContract.JOURNEY_NAMES_FIELD});
+                matrixCursor.addRow(new Object[]{journeyTableName});
+
+                returnCursor = new MergeCursor(new Cursor[]{matrixCursor, returnCursor});
+                break;
         }
         return returnCursor;
     }
 
+    public String getCurrentWorkingTable(){
+        return journeyTableName;
+    }
+
+    /**
+     * Perform a delete operation on a table within the database.
+     * @param uri The URI to the table that we want to run the update on.
+     * @param whereClase the where condition applied when running the SQL query statement.
+     * @param whereArgs the values we are using as arguments for the update where clause.
+     * @return return code
+     */
     @Override
-    public int delete(Uri uri, String where, String[] whereClause) {
+    public int delete(Uri uri, String whereClase, String[] whereArgs) {
 
         switch(uriMatcher.match(uri))
         {
             case ACT_ON_CURRENTLY_SELECTED:
 
                 SQLiteDatabase dataBase = dbHelper.getWritableDatabase();
-                long id = dataBase.delete(journeyTableName, where, whereClause);
+                long id = dataBase.delete(journeyTableName, whereClase, whereArgs);
                 dataBase.close();
 
                 Uri pathWithDelRef = ContentUris.withAppendedId(uri, id);

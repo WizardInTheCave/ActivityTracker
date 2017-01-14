@@ -13,7 +13,6 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.SQLException;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -22,7 +21,6 @@ import android.os.RemoteException;
 import android.support.v4.content.ContextCompat;
 
 import android.location.LocationManager;
-import android.location.Location;
 import android.util.Log;
 
 public class LocationManagementService extends Service {
@@ -30,8 +28,7 @@ public class LocationManagementService extends Service {
     private Messenger messenger;
 
     public LocationManager locationManager = null;
-    public ALocationListener listener = null;
-    public Location previousBestLocation = null;
+    public MyLocationListener listener = null;
 
     public static final String RECEIVE_LOCATION = "com.example.jack.coursework4_activitytracker.RECEIVE_LOCATION";
 
@@ -65,8 +62,8 @@ public class LocationManagementService extends Service {
                 getContentResolver().insert(LocationsContentProviderContract.GENERAL_QUERY_URI, newValues);
             }
             catch (SQLException e){
-                Log.d("what?", "Thing");
-                e.printStackTrace();
+                Log.e("Insert error", "Could not insert with that set of values");
+                // e.printStackTrace();
             }
         }
     }
@@ -76,7 +73,7 @@ public class LocationManagementService extends Service {
         messenger = new Messenger(new MyHandler());
 
         // create the location listener
-        listener = new ALocationListener(getApplicationContext());
+        listener = new MyLocationListener(getApplicationContext());
 
         receiver = new ServiceReceiver();
         intentFilter = new IntentFilter();
@@ -86,10 +83,8 @@ public class LocationManagementService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-
         return messenger.getBinder();
     }
-
 
     private class MyHandler extends Handler {
         @Override
@@ -100,28 +95,25 @@ public class LocationManagementService extends Service {
             switch (message.what) {
 
                 case STOP_LOGGING:
-
-                    // isLogging == 1 &&
                     if (locationManager != null && listener != null) {
                         locationManager.removeUpdates(listener);
                         currentlyLogging = false;
                     }
                     break;
 
-                // tell
+                // the user wants to start logging the gps values coming in
                 case START_LOGGING:
 
                     // Check that the user has provided permissions for the app to use their GPS coordinates
                     if (ContextCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
                             && ContextCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
-                        Bundle trackData = message.getData();
-                        ListenerParcel commandParcel = trackData.getParcelable("myParcel");
+                        //Bundle trackData = message.getData();
+                        //ListenerParcel commandParcel = trackData.getParcelable("myParcel");
 
-                        // isLogging == 1 &&
                         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
-                        // try {
+                        // request location updates from the system location manager periodically
                         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
                                 5, // minimum time interval between updates
                                 5, // minimum distance between updates, in metres
@@ -130,21 +122,21 @@ public class LocationManagementService extends Service {
                     }
                     break;
 
-
+                // The journey table we are using has changed so we need to inform the listner that it needs to re check
+                // at what primary key value it is telling the service to insert into the database from now on.
                 case UPDATE_INSERT_KEY:
                     if (listener != null) {
 
-                        // this will give the currently selected table, now need to find max primary key value in table
+                        // This will give the currently selected table, now need to find max primary key value in table
                         // increment by one and hand to the listener
-
                         Cursor cursor = getContentResolver().query(LocationsContentProviderContract.GET_HIGHEST_PRIMARY,
                                 null, null, null, null);
 
                         if (cursor != null) {
-                            // get all the recipes in the database stored in the form of a hash map so can send back to main activity
+                            // get all the Locations in the database stored in the form of a hash map so can send back to main activity
                             if (cursor.moveToFirst()) {
                                 int startingPrimaryKey = cursor.getInt(cursor.getColumnIndex(LocationsContentProviderContract._ID) + 1);
-                                listener.updateInsertKey(startingPrimaryKey);
+                                listener.updateJourneySettings(startingPrimaryKey);
                             }
                             // carry on from where we left off inserting
                         }
@@ -162,6 +154,7 @@ public class LocationManagementService extends Service {
     }
     @Override
     public void onDestroy() {
+        unregisterReceiver(receiver);
         super.onDestroy();
     }
 

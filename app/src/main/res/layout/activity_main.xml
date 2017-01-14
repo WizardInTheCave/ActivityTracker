@@ -42,15 +42,6 @@
         android:layout_toEndOf="@+id/journeyNameText" />
 
     <Button
-        android:text="Start Tracking"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/trackingButton"
-        android:onClick="changeTrackingStatus"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentStart="true" />
-
-    <Button
         android:text="show Map"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -74,13 +65,38 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/saveButton"
-        tools:text="Save and close Journey"
         android:onClick="saveJourneyName"
         android:layout_alignParentBottom="true"
         android:layout_alignParentStart="true"
         android:layout_alignTop="@+id/loadWalkButton"
         android:layout_alignEnd="@+id/nameJourneyView"
         android:text="Save and close Journey" />
+
+    <TextView
+        android:text="Name your Journey for later:"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/nameJourneyView"
+        android:layout_above="@+id/journeyNameText"
+        android:layout_alignParentStart="true" />
+
+    <Button
+        android:text="Start Tracking"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/trackingButton"
+        android:onClick="changeTrackingStatus"
+        android:layout_alignParentTop="true"
+        android:layout_alignStart="@+id/speedOverTimeGraph" />
+
+    <TextView
+        android:text="MaxSpeed:"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/elevationOverTimeGraph"
+        android:layout_alignStart="@+id/speedOverTimeGraph"
+        android:layout_marginTop="20dp"
+        android:id="@+id/maxSpeedText" />
 
     <EditText
         android:layout_width="wrap_content"
@@ -90,15 +106,32 @@
         android:ems="10"
         android:id="@+id/journeyNameText"
         android:layout_above="@+id/loadWalkButton"
-        android:layout_alignParentStart="true"
-        android:layout_marginBottom="14dp" />
+        android:layout_alignParentStart="true" />
 
     <TextView
-        android:text="Name your Journey for later:"
+        android:text="Max Altitude (Meters): "
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/nameJourneyView"
-        android:layout_above="@+id/journeyNameText"
-        android:layout_alignParentStart="true" />
+        android:id="@+id/maxAltText"
+        android:layout_below="@+id/maxSpeedText"
+        android:layout_alignStart="@+id/maxSpeedText"
+        android:layout_marginTop="12dp" />
+
+    <TextView
+        android:text="0"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/maxSpeedText"
+        android:layout_alignEnd="@+id/speedOverTimeGraph"
+        android:id="@+id/maxSpeedValText" />
+
+    <TextView
+        android:text="0"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/maxAltValText"
+        android:layout_alignBaseline="@+id/maxAltText"
+        android:layout_alignBottom="@+id/maxAltText"
+        android:layout_alignStart="@+id/maxSpeedValText" />
 
 </RelativeLayout>

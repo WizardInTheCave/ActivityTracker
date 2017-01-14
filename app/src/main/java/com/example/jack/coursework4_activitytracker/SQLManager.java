@@ -10,10 +10,6 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class SQLManager extends SQLiteOpenHelper {
 
-    // public static final String JOURNEY_TABLE_NAME = "Locations";
-
-    //public static final String JOURNEYS = "Journeys";
-
     public SQLManager(Context context, String name, SQLiteDatabase.CursorFactory factory,
                       int version) {
         super(context, name, factory, version);

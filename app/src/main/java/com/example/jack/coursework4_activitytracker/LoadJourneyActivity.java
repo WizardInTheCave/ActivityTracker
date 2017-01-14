@@ -6,7 +6,6 @@ package com.example.jack.coursework4_activitytracker;
  */
 
 import java.util.ArrayList;
-
 import android.app.ListActivity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -18,7 +17,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.database.Cursor;
 import android.widget.SimpleCursorAdapter;
-import java.util.ArrayList;
 
 /**
  * This activity will allow the user to select a previous journey they have made.
@@ -32,7 +30,7 @@ public class LoadJourneyActivity extends ListActivity {
 
     /**
      * Get the contents of our list displaying all the different journeys done in the past
-     * @return
+     * @return list of all the journey tables names as strings
      */
     private ArrayList<String> getJourneys(){
 
@@ -58,7 +56,10 @@ public class LoadJourneyActivity extends ListActivity {
         return journeys;
     }
 
-
+    /**
+     * Make and populate the ListView with the contents of the databases lookup table.
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
