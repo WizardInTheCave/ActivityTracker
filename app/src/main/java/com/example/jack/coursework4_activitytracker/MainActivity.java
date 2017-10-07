@@ -61,9 +61,9 @@ public class MainActivity extends AppCompatActivity {
     //ArrayList<Double> speeds = new ArrayList<>();
 
     // if the user is going faster than this count it as a bug because it's silly
-    // speed calculation mostly works fine but when testing rarely it said user
-    // was traveling infinitely fast which is clearly not possible
-
+    // speed calculation mostly works fine but when testing occasionally there were two data points
+    // when a speed is calculated for it said user was traveling infinitely fast which is clearly not possible
+    // after this happens though it carries on working fine.
     final double MAX_ALLOWED_SPEED = 200;
     double maxSpeed = 0;
     double maxAlt = 0;
@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
     static final String ALT_OVER_TIME_TITLE = "Altitude over time";
 
     /**
-     * Connection to the service
+     * Get messenger object to allow further communication with the bound service
      */
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
@@ -164,6 +164,7 @@ public class MainActivity extends AppCompatActivity {
                 altVsTimeSeries.resetData(altVals);
             }
             else {
+                // otherwise just load all the points normally
                 speedVsTimeSeries.appendData(new DataPoint(newTime, currentLocation.speed), true, graphEnd);
                 altVsTimeSeries.appendData(new DataPoint(newTime, currentLocation.alt), true, graphEnd);
                 speedVsTimeGraph.addSeries(speedVsTimeSeries);
@@ -174,6 +175,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Set up the graphs when the activity is created
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -206,8 +211,10 @@ public class MainActivity extends AppCompatActivity {
         altVsTimeGridLabel.setHorizontalAxisTitle("Time (seconds)");
         altVsTimeGridLabel.setVerticalAxisTitle("Altitude (meters)");
 
+        // make a new "Original" table for temporary storage
         getContentResolver().update(LocationsContentProviderContract.JOURNEY_NAMES_ADD_URI, null, null, null);
 
+        // start the service so we can start gathering GPS data
         Intent initialBindIntent = new Intent(this, LocationManagementService.class);
         initialBindIntent.putExtra("bindWithHandler", true);
 
@@ -262,6 +269,11 @@ public class MainActivity extends AppCompatActivity {
             isTracking = true;
         }
     }
+
+    /**
+     * Flip whatever the current tracking statis is
+     * @param v
+     */
     public void changeTrackingStatus(View v){
         if(isTracking) {
             stopTracking();
@@ -282,6 +294,10 @@ public class MainActivity extends AppCompatActivity {
         startActivityForResult(intent, GET_JOURNEY_NAME);
     }
 
+    /**
+     * Reset the GUI components as we are starting a new tracking cycle
+     * data previously displayed was not relivent
+     */
     private void resetDisplays(){
         GraphView altVsTime = (GraphView)findViewById(R.id.elevationOverTimeGraph);
         altVsTime.removeAllSeries();
@@ -322,10 +338,6 @@ public class MainActivity extends AppCompatActivity {
         else {
 
             stopTracking();
-
-            // since we have changed the journey refresh the graphs as the data currently displayed is no longer applicable.
-
-
 
             ContentValues contentValues = new ContentValues();
             contentValues.put(LocationsContentProviderContract.JOURNEY_NAMES_FIELD, journeyName);
@@ -435,7 +447,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onResume(){ super.onResume(); }
 
-    // before destroying the activity unbind from the service so it does not continue running and unregister from the broadcast recever.
+    /**
+     *  before destroying the activity unbind from
+     *  the service so it does not continue running and unregister from the broadcast recever.
+
+     */
     public void onDestroy(){
         if(activityIsBound) {
             unbindService(serviceConnection);

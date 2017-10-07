@@ -44,6 +44,12 @@ public class LocationManagementService extends Service {
     ServiceReceiver receiver;
 
     class ServiceReceiver extends BroadcastReceiver {
+
+        /**
+         * Receive broadcast from MyLocationListener and store in ContentProvider
+         * @param context
+         * @param intent
+         */
         @Override
         public void onReceive(Context context, Intent intent) {
 
@@ -108,9 +114,6 @@ public class LocationManagementService extends Service {
                     if (ContextCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
                             && ContextCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
-                        //Bundle trackData = message.getData();
-                        //ListenerParcel commandParcel = trackData.getParcelable("myParcel");
-
                         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
                         // request location updates from the system location manager periodically
@@ -138,7 +141,6 @@ public class LocationManagementService extends Service {
                                 int startingPrimaryKey = cursor.getInt(cursor.getColumnIndex(LocationsContentProviderContract._ID) + 1);
                                 listener.updateJourneySettings(startingPrimaryKey);
                             }
-                            // carry on from where we left off inserting
                         }
                     }
                     break;

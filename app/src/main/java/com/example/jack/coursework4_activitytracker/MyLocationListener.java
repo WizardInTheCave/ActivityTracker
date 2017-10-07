@@ -18,22 +18,22 @@ public class MyLocationListener implements LocationListener {
 
     int _id = 0;
     Context serviceContext;
-    double totalDistance = 0;
 
     ArrayList<GoogleMapPos> mapPosistions = new ArrayList<>();
     ArrayList<Location> gpsLocations = new ArrayList<>();
 
-    // Calendar calendar;
-
+    /**
+     * Get the service context so broadcast can be sent
+     * @param serviceContext
+     */
     public MyLocationListener(Context serviceContext){
-
         this.serviceContext = serviceContext;
     }
 
     /**
      * Send a broadcast for the actovities and main Service class to pick up containing all the useful data
      * about the users current speed/location
-     * @param location
+     * @param location object containing location data from the devices GPS system
      */
     @Override
     public void onLocationChanged(Location location)
@@ -101,9 +101,6 @@ public class MyLocationListener implements LocationListener {
         Location gpsPreviousLocation = gpsLocations.get(penultimateIdx);
 
         float distanceInMeters = gpsCurrentLocation.distanceTo(gpsPreviousLocation);
-        totalDistance += distanceInMeters;
-        // float distance = currentLocation.distanceTo(previousLocation);
-        // double distanceInMeters = calculateDistanceInMeters(currentLocation, previousLocation);
 
         lastIdx = mapPosistions.size() - 1;
         penultimateIdx = mapPosistions.size() - 2;

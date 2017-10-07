@@ -210,7 +210,6 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
         altValText.setText(currentAlt);
         latValText.setText(currentLat);
         longValText.setText(currentLong);
-        // the google map markers don't contain alt data so will need to cross reference to get this
     }
 
     /**
@@ -229,7 +228,7 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
         if (myCursor != null && myCursor.moveToFirst()) {
             String tableName = myCursor.getString(myCursor.getColumnIndex(LocationsContentProviderContract.JOURNEY_NAMES_FIELD));
             imagePath ="/mnt/sdcard/map_" + tableName + "_"+ title + ".png";
-            Log.d("PATH IS!!!", imagePath);
+
             File image = new File(imagePath);
 
             if(!image.exists()) {
@@ -262,12 +261,11 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
                     }
                 });
                 googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(marker.getPosition(), 20));
-        }
-
-
-        }else{
-            currentImage = imagePath;
-            updateUI();
+            }
+            else{
+                currentImage = imagePath;
+                updateUI();
+            }
         }
     }
     /**

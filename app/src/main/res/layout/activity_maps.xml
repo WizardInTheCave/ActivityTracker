@@ -77,38 +77,6 @@
         android:layout_above="@+id/altText"
         android:layout_alignStart="@+id/altText" />
 
-    <TextView
-        android:text="(Mark ID)"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignTop="@+id/idText"
-        android:layout_toEndOf="@+id/longText"
-        android:id="@+id/idValText" />
-
-    <TextView
-        android:text="(Altitude)"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/idValText"
-        android:layout_alignEnd="@+id/idValText"
-        android:id="@+id/altValText" />
-
-    <TextView
-        android:text="(Latitude)"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/altValText"
-        android:layout_toEndOf="@+id/longText"
-        android:id="@+id/latValText" />
-
-    <TextView
-        android:text="(Longitude)"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/deleteAll"
-        android:layout_toEndOf="@+id/longText"
-        android:id="@+id/longValText" />
-
     <ImageView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -121,6 +89,39 @@
         android:layout_marginEnd="15dp"
         android:layout_marginTop="11dp"
         android:layout_alignTop="@+id/idText" />
+
+    <TextView
+        android:text="(Longitude)"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/longValText"
+        android:layout_below="@+id/latValText"
+        android:layout_toEndOf="@+id/longText"
+        android:layout_marginStart="20dp" />
+
+    <TextView
+        android:text="(Altitude)"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/altValText"
+        android:layout_below="@+id/idValText"
+        android:layout_alignStart="@+id/longValText" />
+
+    <TextView
+        android:text="(Latitude)"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/latValText"
+        android:layout_below="@+id/altValText"
+        android:layout_alignStart="@+id/longValText" />
+
+    <TextView
+        android:text="(Mark ID)"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/idValText"
+        android:layout_above="@+id/altText"
+        android:layout_alignStart="@+id/altValText" />
     <!--android:text="@string/ButtonTest"-->
 
 </RelativeLayout>

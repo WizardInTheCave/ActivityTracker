@@ -121,9 +121,10 @@
         android:text="0"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:id="@+id/maxSpeedValText"
+        android:layout_alignBaseline="@+id/maxSpeedText"
         android:layout_alignBottom="@+id/maxSpeedText"
-        android:layout_alignEnd="@+id/speedOverTimeGraph"
-        android:id="@+id/maxSpeedValText" />
+        android:layout_toEndOf="@+id/speedOverTimeGraph" />
 
     <TextView
         android:text="0"
@@ -132,6 +133,6 @@
         android:id="@+id/maxAltValText"
         android:layout_alignBaseline="@+id/maxAltText"
         android:layout_alignBottom="@+id/maxAltText"
-        android:layout_alignStart="@+id/maxSpeedValText" />
+        android:layout_toEndOf="@+id/maxSpeedValText" />
 
 </RelativeLayout>
