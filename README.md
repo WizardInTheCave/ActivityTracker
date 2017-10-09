@@ -6,11 +6,7 @@ Although not the most sophisticated app it makes use of quite a wide variety of 
 * Activities, 
 * Broadcast receivers
 * Content providers
-* Services 
-
-To download use:
-
-git clone
+* Services
 
 ## App purpose / Features
 The app is designed to work as a basic GPS tracking app to allow a user to visualise a journey they are making in real time in 
