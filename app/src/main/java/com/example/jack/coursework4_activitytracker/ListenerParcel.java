@@ -13,9 +13,6 @@ public class ListenerParcel implements Parcelable {
 
     int isLogging;
     Context context;
-//    double altitude;
-//    double latitude;
-//    double longitude;
 
     public ListenerParcel()
     {

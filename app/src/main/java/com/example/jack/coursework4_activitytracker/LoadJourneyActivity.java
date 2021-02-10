@@ -1,10 +1,6 @@
 
 package com.example.jack.coursework4_activitytracker;
 
-/**
- * Created by Jack on 11/01/2017.
- */
-
 import java.util.ArrayList;
 import android.app.ListActivity;
 import android.content.Intent;
@@ -29,7 +25,7 @@ public class LoadJourneyActivity extends ListActivity {
     public static final String SELECTED_JOURNEY_TITLE = "SelectedJourneyTitle";
 
     /**
-     * Get the contents of our list displaying all the different journeys done in the past
+     * Get the contents of the list displaying all the different journeys done in the past
      * @return list of all the journey tables names as strings
      */
     private ArrayList<String> getJourneys(){
@@ -58,7 +54,7 @@ public class LoadJourneyActivity extends ListActivity {
 
     /**
      * Make and populate the ListView with the contents of the databases lookup table.
-     * @param savedInstanceState
+     * @param savedInstanceState a passed in state for the activity
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {

@@ -33,6 +33,23 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
+    final int SHOW_THE_MAP = 1;
+    final int GET_JOURNEY_NAME = 2;
+
+    final int MAX_GRAPH_TIME_VAL = 25;
+
+    final String SPEED_OVER_TIME_TITLE = "Speed over time";
+    final String ALT_OVER_TIME_TITLE = "Altitude over time";
+
+    final int MAX_MARKERs_ON_GRAPH_DISPLAY = 5;
+    final int MIN_GRAPH_RESET_VAL = 10;
+
+    final String MAX_SPEED_ID = "maxSpeed";
+    final String MAX_ALT_ID = "maxAlt";
+
+    final int NOTIFICATION_ID = 1;
+
+
     private Messenger messenger;
     Messenger replyMessenger;
     boolean activityIsBound = false;
@@ -42,21 +59,11 @@ public class MainActivity extends AppCompatActivity {
 
     boolean isTracking = false;
 
-    static final int SHOW_THE_MAP = 1;
-    static final int GET_JOURNEY_NAME = 2;
-
-    static final int MAX_GRAPH_TIME_VAL = 25;
-
     /**
      * This collections keep track of all the data points we are plotting
      */
     LineGraphSeries<DataPoint> speedVsTimeSeries;
     LineGraphSeries<DataPoint> altVsTimeSeries;
-
-    final String MAX_SPEED_ID = "maxSpeed";
-    final String MAX_ALT_ID = "maxAlt";
-    final int NOTIFICATION_ID = 1;
-
 
     int broadcastCount = 0;
 
@@ -65,7 +72,6 @@ public class MainActivity extends AppCompatActivity {
      */
     ArrayList<GoogleMapPos> locations = new ArrayList<>();
     double locationsSpeedTotal = 0;
-
 
     /**
      * If user is moving faster than this there was a bug in the calculation of the speed so don't count it.
@@ -79,9 +85,6 @@ public class MainActivity extends AppCompatActivity {
 
     GraphView speedVsTimeGraph;
     GraphView altVsTimeGraph;
-
-    static final String SPEED_OVER_TIME_TITLE = "Speed over time";
-    static final String ALT_OVER_TIME_TITLE = "Altitude over time";
 
     /**
      * Get messenger object to allow further communication with the bound service
@@ -184,9 +187,9 @@ public class MainActivity extends AppCompatActivity {
             long timeIntoJourney = currentLocation.timeSeconds - startTime;
             times.add(timeIntoJourney);
 
-            // reset the buffer every 5th broadcast recieved so the Activity doesn't freeze
-            // when trying to render a really large graph
-            if(broadcastCount % 5 == 0 && broadcastCount >= 10) {
+            // reset the buffer every 5th broadcast received so the Activity doesn't freeze
+            // when trying to render a really large graph, don't do it initially
+            if(broadcastCount % MAX_MARKERs_ON_GRAPH_DISPLAY == 0 && broadcastCount >= MIN_GRAPH_RESET_VAL) {
 
                 int count = 5;
                 DataPoint[] speedVals = new DataPoint[count];
@@ -230,7 +233,6 @@ public class MainActivity extends AppCompatActivity {
             // Restore value of members from saved state
             maxAlt = savedInstanceState.getDouble(MAX_ALT_ID);
             maxSpeed = savedInstanceState.getDouble(MAX_SPEED_ID);
-
         }
 
         speedVsTimeGraph = (GraphView)findViewById(R.id.speedOverTimeGraph);
@@ -240,7 +242,6 @@ public class MainActivity extends AppCompatActivity {
         GridLabelRenderer speedVsTimeGridLabel = speedVsTimeGraph.getGridLabelRenderer();
         speedVsTimeGridLabel.setHorizontalAxisTitle("Time (seconds)");
         speedVsTimeGridLabel.setVerticalAxisTitle("Speed (m/s)");
-
 
         altVsTimeGraph = (GraphView)findViewById(R.id.elevationOverTimeGraph);
         altVsTimeGraph.setTitle(ALT_OVER_TIME_TITLE);
@@ -282,7 +283,7 @@ public class MainActivity extends AppCompatActivity {
         Button trackingButton = (Button)findViewById(R.id.trackingButton);
         trackingButton.setText("Start Tracking");
 
-        //re set the max speed and alt as it is no longer relevant
+        //reset the max speed and alt as it is no longer relevant
         resetDisplays();
 
         isTracking = false;
@@ -419,7 +420,7 @@ public class MainActivity extends AppCompatActivity {
                     // tell our service to stop tracking because new GPS coordinates are no longer applicable to this journey.
                     stopTracking();
 
-                    // send message to location listener telling it to update the id values to the end of the table we have switched to +1
+                    // send message to location locationListener telling it to update the id values to the end of the table we have switched to +1
                     // otherwise the system will try to add valus into the currently selected table with primary key indexes for the previous table
                     Message message = Message.obtain(null, LocationManagementService.UPDATE_INSERT_KEY, 0, 0);
                     sendMessageToService(message);

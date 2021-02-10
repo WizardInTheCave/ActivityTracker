@@ -4,7 +4,9 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * Created by Jack on 24/12/2016.
+ * class storing data about a google maps position,
+ * these positions will be displayed in the MapsActivity
+ * and stored in the SQL database
  */
 
 public class GoogleMapPos implements Serializable{

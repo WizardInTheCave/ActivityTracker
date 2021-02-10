@@ -61,7 +61,7 @@ public class MyLocationListener implements LocationListener {
 
         double speed = 0;
         if(mapPosistions.size() >= 2){
-            speed = calcSpeed();
+            speed = calcSpeedMetresPerSecond();
         }
 
         // the reason I store so many values in this object is to avoid computation needing to
@@ -91,7 +91,7 @@ public class MyLocationListener implements LocationListener {
      * speed = distance/time
      * @return speed (meters per second)
      */
-    private double calcSpeed(){
+    private double calcSpeedMetresPerSecond(){
 
         // to get current speed need to take last two markers in mapPositions calculate distance between those and
         // look at the time interval between the two

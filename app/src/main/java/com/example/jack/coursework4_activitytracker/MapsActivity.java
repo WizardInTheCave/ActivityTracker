@@ -188,7 +188,6 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
         ImageView markerImageView = (ImageView) findViewById(R.id.markerImage);
 
         TextView idValText = (TextView)findViewById(R.id.idValText);
-
         TextView altValText = (TextView)findViewById(R.id.altValText);
         TextView latValText = (TextView)findViewById(R.id.latValText);
         TextView longValText = (TextView)findViewById(R.id.longValText);
@@ -296,7 +295,7 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
     }
 
     /**
-     * For new points that are provided by the location listener we want to recieve these and add them to the map display
+     * For new points that are provided by the location locationListener we want to recieve these and add them to the map display
      */
     class MapsReceiver extends BroadcastReceiver {
         @Override
@@ -409,7 +408,7 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
         return locations;
     }
 
-    // when we close the activity we no longer want to receive broadcasts so unregister.
+    // When we close the activity we no longer want to receive broadcasts so unregister.
     @Override
     protected void onDestroy() {
         unregisterReceiver(receiver);
