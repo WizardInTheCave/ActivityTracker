@@ -12,6 +12,8 @@ import java.util.ArrayList;
 
 /**
  * Created by Jack on 16/11/2016.
+ *
+ *
  */
 
 public class MyLocationListener implements LocationListener {
@@ -31,7 +33,7 @@ public class MyLocationListener implements LocationListener {
     }
 
     /**
-     * Send a broadcast for the actovities and main Service class to pick up containing all the useful data
+     * Send a broadcast so the activities and main service class can pick up containing all the useful data
      * about the users current speed/location
      * @param location object containing location data from the devices GPS system
      */

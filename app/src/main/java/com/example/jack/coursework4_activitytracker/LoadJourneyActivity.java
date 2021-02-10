@@ -42,7 +42,7 @@ public class LoadJourneyActivity extends ListActivity {
                 projection,
                 null, null, null, null);
 
-        // all the different past journeys that can be selected from
+        // Extract the names of the past journeys that can be selected from from the Cursor object
         if (cursor != null) {
             if (cursor.moveToFirst()) {
                 do {

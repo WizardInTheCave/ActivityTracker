@@ -26,11 +26,8 @@ import android.widget.TextView;
 
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.GridLabelRenderer;
-import com.jjoe64.graphview.helper.StaticLabelsFormatter;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
-
-import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 
@@ -48,6 +45,11 @@ public class MainActivity extends AppCompatActivity {
     static final int SHOW_THE_MAP = 1;
     static final int GET_JOURNEY_NAME = 2;
 
+    static final int MAX_GRAPH_TIME_VAL = 25;
+
+    /**
+     * This collections keep track of all the data points we are plotting
+     */
     LineGraphSeries<DataPoint> speedVsTimeSeries;
     LineGraphSeries<DataPoint> altVsTimeSeries;
 
@@ -55,16 +57,21 @@ public class MainActivity extends AppCompatActivity {
     final String MAX_ALT_ID = "maxAlt";
     final int NOTIFICATION_ID = 1;
 
+
     int broadcastCount = 0;
 
+    /**
+     * Keep track of all the locations that have been received from the GPS service
+     */
     ArrayList<GoogleMapPos> locations = new ArrayList<>();
-    //ArrayList<Double> speeds = new ArrayList<>();
+    double locationsSpeedTotal = 0;
 
-    // if the user is going faster than this count it as a bug because it's silly
-    // speed calculation mostly works fine but when testing occasionally there were two data points
-    // when a speed is calculated for it said user was traveling infinitely fast which is clearly not possible
-    // after this happens though it carries on working fine.
+
+    /**
+     * If user is moving faster than this there was a bug in the calculation of the speed so don't count it.
+     */
     final double MAX_ALLOWED_SPEED = 200;
+
     double maxSpeed = 0;
     double maxAlt = 0;
 
@@ -92,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
     };
 
     /**
-     * when the maps activity is rotated want to preserve the display state
+     * When the maps activity is rotated want to preserve the display state
      * @param savedInstanceState
      */
     @Override
@@ -104,8 +111,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Start the maps activity to view the journey on a map
-     * @param v
+     * Start the maps activity to view the current journey on a map
+     * @param v The current view
      */
     public void showMap(View v){
         Intent intent = new Intent(MainActivity.this, MapsActivity.class);
@@ -117,19 +124,41 @@ public class MainActivity extends AppCompatActivity {
      * Get updates on the location which we can use to generate graphs for the user
      */
     class MainReceiver extends BroadcastReceiver {
+
+
+        /**
+         * This method is called every time a broadcast is received
+         * providing an update on the users position
+         */
         @Override
         public void onReceive(Context context, Intent intent) {
 
             GoogleMapPos currentLocation = (GoogleMapPos)intent.getExtras().getSerializable("Location");
+
             locations.add(currentLocation);
+            locationsSpeedTotal += currentLocation.speed;
 
+            // Update the labels and the graphs
+            UpdateInfoLabels(currentLocation);
+            UpdateGraphs(currentLocation);
 
-            long startTime = locations.get(0).timeSeconds;
-            long newTime = currentLocation.timeSeconds - startTime;
+            broadcastCount++;
+        }
 
-            times.add(newTime);
+        /**
+         * Update all labels containing infomation about the statistics associated with the journey
+         * @param currentLocation Information about the most recent location the user
+         *                        was detected but as a google maps position
+         */
+        private void UpdateInfoLabels(GoogleMapPos currentLocation) {
 
-            // check if there is a new max speed and that the user isn't going infinately fast
+            // Average Speed
+            double avgSpeed = locationsSpeedTotal / locations.size();
+            TextView avgSpeedValText = (TextView)findViewById(R.id.avgSpeedValText);
+            avgSpeedValText.setText(String.format("%.2f",avgSpeed));
+
+            // Check if there is a new max speed and that the user isn't going faster than should be possible
+            // if so update the max speed recorded so far on the journey
             if(currentLocation.speed > maxSpeed && currentLocation.speed < MAX_ALLOWED_SPEED){
                 maxSpeed = currentLocation.speed;
                 TextView maxSpeedValText = (TextView)findViewById(R.id.maxSpeedValText);
@@ -141,10 +170,22 @@ public class MainActivity extends AppCompatActivity {
                 maxAltValText.setText(String.format("%.2f",maxAlt));
             }
 
-            int graphEnd = 25;
 
-            // reset the buffer every 5th broadcast recieved so the Activity doesn't freeze trying to render a really
-            // large graph as was the case when I tried initially
+        }
+
+        /**
+         * Update the graph displays showing the change in speeed and altitude over time
+         * @param currentLocation Information about the most recent location the user
+         *                        was detected but as a google maps position
+         */
+        private void UpdateGraphs(GoogleMapPos currentLocation) {
+
+            long startTime = locations.get(0).timeSeconds;
+            long timeIntoJourney = currentLocation.timeSeconds - startTime;
+            times.add(timeIntoJourney);
+
+            // reset the buffer every 5th broadcast recieved so the Activity doesn't freeze
+            // when trying to render a really large graph
             if(broadcastCount % 5 == 0 && broadcastCount >= 10) {
 
                 int count = 5;
@@ -165,13 +206,11 @@ public class MainActivity extends AppCompatActivity {
             }
             else {
                 // otherwise just load all the points normally
-                speedVsTimeSeries.appendData(new DataPoint(newTime, currentLocation.speed), true, graphEnd);
-                altVsTimeSeries.appendData(new DataPoint(newTime, currentLocation.alt), true, graphEnd);
+                speedVsTimeSeries.appendData(new DataPoint(timeIntoJourney, currentLocation.speed), true, MAX_GRAPH_TIME_VAL);
+                altVsTimeSeries.appendData(new DataPoint(timeIntoJourney, currentLocation.alt), true, MAX_GRAPH_TIME_VAL);
                 speedVsTimeGraph.addSeries(speedVsTimeSeries);
                 altVsTimeGraph.addSeries(altVsTimeSeries);
             }
-            broadcastCount++;
-
         }
     }
 
@@ -185,7 +224,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         broadcastCount = 0;
-
+        locationsSpeedTotal = 0;
 
         if (savedInstanceState != null) {
             // Restore value of members from saved state
@@ -311,7 +350,7 @@ public class MainActivity extends AppCompatActivity {
         TextView maxAltValText = (TextView)findViewById(R.id.maxAltValText);
         maxAltValText.setText(Double.toString(maxAlt));
 
-        TextView maxSpeedValText = (TextView)findViewById(R.id.maxSpeedValText);
+        TextView maxSpeedValText = (TextView)findViewById(R.id.avgSpeedValText);
         maxSpeedValText.setText(Double.toString(maxSpeed));
 
         broadcastCount = 0;

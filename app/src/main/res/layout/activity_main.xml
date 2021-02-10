@@ -21,6 +21,15 @@
         <!--android:id="@+id/mainTableTL">-->
     <!--</TableLayout>-->
 
+    <TextView
+        android:text="0"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/maxSpeedValText"
+        android:layout_alignBaseline="@+id/maxSpeedText"
+        android:layout_alignBottom="@+id/maxSpeedText"
+        android:layout_alignStart="@+id/loadWalkButton" />
+
     <com.jjoe64.graphview.GraphView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -89,15 +98,6 @@
         android:layout_alignParentTop="true"
         android:layout_alignStart="@+id/speedOverTimeGraph" />
 
-    <TextView
-        android:text="MaxSpeed:"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/elevationOverTimeGraph"
-        android:layout_alignStart="@+id/speedOverTimeGraph"
-        android:layout_marginTop="20dp"
-        android:id="@+id/maxSpeedText" />
-
     <EditText
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -109,30 +109,45 @@
         android:layout_alignParentStart="true" />
 
     <TextView
-        android:text="Max Altitude (Meters): "
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/maxAltText"
-        android:layout_below="@+id/maxSpeedText"
-        android:layout_alignStart="@+id/maxSpeedText"
-        android:layout_marginTop="12dp" />
-
-    <TextView
-        android:text="0"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/maxSpeedValText"
-        android:layout_alignBaseline="@+id/maxSpeedText"
-        android:layout_alignBottom="@+id/maxSpeedText"
-        android:layout_toEndOf="@+id/speedOverTimeGraph" />
-
-    <TextView
         android:text="0"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/maxAltValText"
         android:layout_alignBaseline="@+id/maxAltText"
         android:layout_alignBottom="@+id/maxAltText"
-        android:layout_toEndOf="@+id/maxSpeedValText" />
+        android:layout_toEndOf="@+id/avgSpeedValText"
+        android:layout_alignStart="@+id/avgSpeedValText" />
+
+    <TextView
+        android:text="Max Altitude (Meters): "
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/maxAltText"
+        android:layout_above="@+id/nameJourneyView"
+        android:layout_alignEnd="@+id/trackingButton" />
+
+    <TextView
+        android:text="0"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/avgSpeedValText"
+        android:layout_above="@+id/maxAltValText"
+        android:layout_alignStart="@+id/maxSpeedValText" />
+
+    <TextView
+        android:text="AverageSpeed:"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/avgSpeedText"
+        android:layout_below="@+id/maxSpeedText"
+        android:layout_alignStart="@+id/maxAltText" />
+
+    <TextView
+        android:text="MaxSpeed:"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/maxSpeedText"
+        android:layout_alignStart="@+id/avgSpeedText"
+        android:layout_above="@+id/avgSpeedValText" />
 
 </RelativeLayout>

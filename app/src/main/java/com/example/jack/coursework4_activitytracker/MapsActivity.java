@@ -30,6 +30,9 @@ import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+/**
+ *
+ */
 public class MapsActivity extends android.support.v4.app.FragmentActivity implements
         OnMapReadyCallback, GoogleMap.OnMarkerClickListener  {
 
@@ -37,11 +40,11 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
     GoogleMap googleMap;
     HashMap<Marker, GoogleMapPos> posMapMarkers;
 
-    Marker currentMarker = null;
-
     IntentFilter intentFilter;
     MapsReceiver receiver;
 
+    // Data values for the selected marker
+    Marker currentMarker = null;
     String currentTitle;
     String currentAlt;
     String currentImage;
@@ -52,6 +55,8 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
 
     float originalZoomAmount;
 
+    // Names of Instance state variables
+    // necessary to preserve state when screen is rotated
     static final String CURRENT_TITLE_ID = "markerTitle";
     static final String CURRENT_ALTITUDE_ID = "markerAlt";
     static final String CURRENT_IMAGE_ID = "markerImg";
@@ -66,6 +71,10 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
     };
 
 
+    /**
+     *
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -124,7 +133,6 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
             String whereClause = LocationsContentProviderContract._ID + "= ?";
             String[] whereArgs = new String[]{currentMarker.getTitle()};
 
-            // getContentResolver().update(LocationContentProviderContract.LOCATION_URI, contentValues ,whereClause, whereArgs);
             getContentResolver().delete(LocationsContentProviderContract.GENERAL_QUERY_URI, whereClause, whereArgs);
         }
 
@@ -140,7 +148,6 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
                 marker.remove();
             }
         }
-
         getContentResolver().delete(LocationsContentProviderContract.GENERAL_QUERY_URI, null, null);
     }
 
@@ -163,7 +170,9 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
         // if we have already taken a photo of this marker then display this, otherwise take a photo for it
         getPhoto(marker);
 
-        return true;
+        boolean result = true;
+        // under what condition are we returning false???
+        return result;
     }
 
     /**

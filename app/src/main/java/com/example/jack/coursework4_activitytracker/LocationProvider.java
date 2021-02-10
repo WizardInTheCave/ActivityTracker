@@ -95,8 +95,8 @@ public class LocationProvider extends ContentProvider {
 
     /**
      * Check to see if a table exists before we try to update a record in it or perform an insert
-     * @param table
-     * @return
+     * @param table s string representing the name of the table we are checking exists.
+     * @return EXISTS a boolean value indicating if the table in question exists or not.
      */
     private boolean tableExists(String table, SQLiteDatabase dataBase){
 
@@ -107,7 +107,10 @@ public class LocationProvider extends ContentProvider {
         }
         int count = cursor.getInt(0);
         cursor.close();
-        return count > 0;
+
+        final Boolean EXISTS = count > 0;
+
+        return EXISTS;
     }
 
     /**
@@ -314,9 +317,9 @@ public class LocationProvider extends ContentProvider {
     /**
      * Perform a delete operation on a table within the database.
      * @param uri The URI to the table that we want to run the update on.
-     * @param whereClase the where condition applied when running the SQL query statement.
-     * @param whereArgs the values we are using as arguments for the update where clause.
-     * @return return code
+     * @param whereClase The where condition applied when running the SQL query statement.
+     * @param whereArgs The values we are using as arguments for the update where clause.
+     * @return return code for the method
      */
     @Override
     public int delete(Uri uri, String whereClase, String[] whereArgs) {
