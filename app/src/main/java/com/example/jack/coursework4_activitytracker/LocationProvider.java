@@ -48,10 +48,10 @@ public class LocationProvider extends ContentProvider {
     final static int GET_CURRENTLY_SELECTED = 7;
 
 
-    // the name given to tables when they are first created
+    // the default given to tables when they are first created
     final String DEFAULT_TABLE_NAME = "Original";
 
-    // this variable keeps track of what table we are currently working with
+    // keep track of table currently working with
     String journeyTableName = DEFAULT_TABLE_NAME;
 
     /**
