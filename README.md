@@ -1,5 +1,5 @@
 # Android Activity Tracker
-This application was something I developed over two weeks’ worth of evenings 
+This application was something I developed over two weeksâ€™ worth of evenings 
 during my time at the University of Nottingham and helped me to get a better grip of Android development.
 Although not the most sophisticated app it makes use of quite a wide variety of android functionality including:
 
@@ -21,3 +21,7 @@ whenever the user requests a data point to be deleted or a journey loaded. GPS l
 LocationManagementService which also can communicate with the location listener receiving the GPS coordinates.
 
 ![Alt text](./screenshots/ArchitectureDiagram.png "Architecture Diagram")
+
+![Alt text](./screenshots/MapsDiagram.png "The Maps Activity")
+
+![Alt text](./screenshots/StatisticsActivity.png "Statistics generated from incoming GPS service data")
