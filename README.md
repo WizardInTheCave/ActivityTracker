@@ -22,6 +22,8 @@ LocationManagementService which also can communicate with the location listener 
 
 ![Alt text](./screenshots/ArchitectureDiagram.png "Architecture Diagram")
 
-![Alt text](./screenshots/MapsDiagram.png "The Maps Activity")
+
+![Alt text](./screenshots/MapsActivity.png "The Maps Activity")
+
 
 ![Alt text](./screenshots/StatisticsActivity.png "Statistics generated from incoming GPS service data")
