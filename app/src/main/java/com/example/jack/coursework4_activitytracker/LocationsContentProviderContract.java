@@ -3,9 +3,9 @@ package com.example.jack.coursework4_activitytracker;
 import android.net.Uri;
 
 /**
- * Created by Jack on 22/12/2016.
+ * This class contains a bunch of final values used for building valid SQL queries that
+ * that can be run on the database
  */
-
 public class LocationsContentProviderContract {
 
     public static final String DEFAULT_JOURNEY_TABLE = "Original";
@@ -19,8 +19,7 @@ public class LocationsContentProviderContract {
 
     public static final String AUTHORITY = "com.example.jack.coursework4_activitytracker.TripsProvider";
 
-    // the activity doesn't know the current table we are working with so find this our from the content
-    // provider object
+    // The activity doesn't know the current table we are working with so find this our from the content provider object
     // public static final String GET_CURRENT_TABLE = Uri.parse("content://"+AUTHORITY+"/");
 
     // public static final Uri LOCATION_URI = Uri.parse("content://"+AUTHORITY+"/Locations");
@@ -40,15 +39,9 @@ public class LocationsContentProviderContract {
 
     public static final Uri CHANGE_CURRENTLY_SELECTED_TABLE_URI = Uri.parse("content://"+AUTHORITY+"/ChangeTable");
 
-
     public static final Uri JOURNEY_NAMES_QUERY_URI = Uri.parse("content://"+AUTHORITY+"/Journeys/Query");
     public static final Uri JOURNEY_NAMES_ADD_URI = Uri.parse("content://"+AUTHORITY+"/Journeys/Add");
     public static final Uri JOURNEY_NAMES_RENAME_URI = Uri.parse("content://"+AUTHORITY+"/Journeys/Rename");
 
     public static final Uri GET_CURRENTLY_SELECTED_TABLE = Uri.parse("content://"+AUTHORITY+"/GetCurrentlySelectedTable");
-
-    // public static final String AUTHORITY = "com.example.jack.coursework4_activitytracker.JourneyProvider";
-    // public static final String AUTHORITY = "com.example.jack.coursework4_activitytracker.TripsProvider";
-
-
 }

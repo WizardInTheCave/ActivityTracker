@@ -13,7 +13,6 @@ import java.util.ArrayList;
 /**
  * Created by Jack on 16/11/2016.
  *
- *
  */
 
 public class MyLocationListener implements LocationListener {
@@ -59,6 +58,7 @@ public class MyLocationListener implements LocationListener {
         long passed = now - calendar.getTimeInMillis();
         long secondsSinceMidnight = passed / 1000;
 
+        // Only calculate speed if there's more than two markers to calculate speed from
         double speed = 0;
         if(mapPosistions.size() >= 2){
             speed = calcSpeedMetresPerSecond();

@@ -5,7 +5,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 /**
- * Created by Jack on 22/12/2016.
+ * Simple class designed to initiate creation and renewal of the SQLite database if necessary
  */
 
 public class SQLManager extends SQLiteOpenHelper {

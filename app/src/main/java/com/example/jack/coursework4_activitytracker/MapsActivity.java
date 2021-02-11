@@ -31,7 +31,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
- *
+ * Activity showing the google maps screen containing the markers,
+ * also contains functionality to view information about specific markers and delete them.
  */
 public class MapsActivity extends android.support.v4.app.FragmentActivity implements
         OnMapReadyCallback, GoogleMap.OnMarkerClickListener  {
@@ -335,8 +336,7 @@ public class MapsActivity extends android.support.v4.app.FragmentActivity implem
     /**
      * Manipulates the map once available.
      * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
+     * This is where we can add markers or lines, add listeners or move the camera.
      * If Google Play services is not installed on the device, the user will be prompted to install
      * it inside the SupportMapFragment. This method will only be triggered once the user has
      * installed Google Play services and returned to the app.

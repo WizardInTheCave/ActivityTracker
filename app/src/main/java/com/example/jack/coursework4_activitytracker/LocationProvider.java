@@ -13,9 +13,9 @@ import android.net.Uri;
 import android.util.Log;
 
 /**
- * Created by Jack on 22/12/2016.
+ * This class is used to perform operations on the SQLite database once it has been created
+ * operations on the database have been written as methods within this class
  */
-
 public class LocationProvider extends ContentProvider {
 
     private SQLManager dbHelper = null;
@@ -68,7 +68,7 @@ public class LocationProvider extends ContentProvider {
             dataBase.execSQL("ALTER TABLE " + "\"" + journeyTableName + "\"" + " RENAME TO " + "\"" + newName + "\"");
 
 
-            // now the name of the able has been altered it needs to be added to the lookup table
+            // now the name of the table has been altered it needs to be added to the lookup table
             ContentValues contentValues = new ContentValues();
             contentValues.put(LocationsContentProviderContract.JOURNEY_NAMES_FIELD, newName);
 
@@ -82,35 +82,43 @@ public class LocationProvider extends ContentProvider {
             getContext().getContentResolver().notifyChange(pathWithInsertRef, null);
             dataBase.close();
 
-            // Now need to make a new original table having renamed the previous one so the user can start a fresh journey.
+            // now need to make a new original table having renamed the previous one so the user can start a fresh journey.
             makeOriginalJourneyTable(uri, values);
             journeyTableName = DEFAULT_TABLE_NAME;
         }
         catch (SQLException e){
             Log.e("Journey name conflict", "cannot insert a journey with a name that already exists");
         }
-
-        // need to make a new "original" table so operation can carry on as per usual
     }
 
     /**
      * Check to see if a table exists before we try to update a record in it or perform an insert
-     * @param table s string representing the name of the table we are checking exists.
+     * @param table, a string representing the name of the table we are checking exists.
      * @return EXISTS a boolean value indicating if the table in question exists or not.
      */
     private boolean tableExists(String table, SQLiteDatabase dataBase){
 
+
+        Boolean exists = null;
+
         Cursor cursor = dataBase.rawQuery("SELECT COUNT(*) FROM sqlite_master WHERE type = ? AND name = ?", new String[] {"table", table});
         if (!cursor.moveToFirst()) {
             cursor.close();
-            return false;
+            exists = false;
         }
         int count = cursor.getInt(0);
         cursor.close();
 
-        final Boolean EXISTS = count > 0;
+         if(count > 0){
+             exists = true;
+         };
 
-        return EXISTS;
+        if(exists != null){
+            return exists;
+        }
+        else{
+            throw new SQLException("could not access database to check if table exists or not!");
+        }
     }
 
     /**
@@ -122,25 +130,29 @@ public class LocationProvider extends ContentProvider {
     public void initialiseOriginalJourney(Uri uri, ContentValues values){
 
 
-        makeOriginalJourneyTable(uri, values);
+        try {
+            makeOriginalJourneyTable(uri, values);
 
-        SQLiteDatabase dataBase = dbHelper.getWritableDatabase();
+            SQLiteDatabase dataBase = dbHelper.getWritableDatabase();
 
-        if (tableExists(DEFAULT_TABLE_NAME, dataBase)) {
+            if (tableExists(DEFAULT_TABLE_NAME, dataBase)) {
 
 
-            ContentValues contentValues = new ContentValues();
-            contentValues.put(LocationsContentProviderContract.JOURNEY_NAMES_FIELD, DEFAULT_TABLE_NAME);
+                ContentValues contentValues = new ContentValues();
+                contentValues.put(LocationsContentProviderContract.JOURNEY_NAMES_FIELD, DEFAULT_TABLE_NAME);
 
-            // use conflict ignore so there isn't a problem if the record already exists in the lookup.
-            long id = dataBase.insertWithOnConflict(LocationsContentProviderContract.JOURNEY_NAMES_TABLE,
-                    null, contentValues, SQLiteDatabase.CONFLICT_IGNORE);
+                // use conflict ignore so there isn't a problem if the record already exists in the lookup.
+                long id = dataBase.insertWithOnConflict(LocationsContentProviderContract.JOURNEY_NAMES_TABLE,
+                        null, contentValues, SQLiteDatabase.CONFLICT_IGNORE);
 
-            Uri pathWithInsertRef = ContentUris.withAppendedId(uri, id);
-            getContext().getContentResolver().notifyChange(pathWithInsertRef, null);
+                Uri pathWithInsertRef = ContentUris.withAppendedId(uri, id);
+                getContext().getContentResolver().notifyChange(pathWithInsertRef, null);
+            }
+            dataBase.close();
         }
-        dataBase.close();
-
+        catch (SQLException e){
+            Log.d("SQL error", e.toString());
+        }
     }
 
     /**
@@ -155,7 +167,7 @@ public class LocationProvider extends ContentProvider {
         if (tableExists(DEFAULT_TABLE_NAME, dataBase)) {
             dataBase.execSQL("DROP TABLE " + DEFAULT_TABLE_NAME);
         }
-        // there was no error so table already exists
+        // there was no error so the table must already exist
         // make the new table for our journey
         dataBase.execSQL(
                 "CREATE TABLE " + DEFAULT_TABLE_NAME + "(" +
