@@ -31,6 +31,10 @@ import com.jjoe64.graphview.series.LineGraphSeries;
 
 import java.util.ArrayList;
 
+
+/**
+ * The activity which starts by default when the user runs the application
+ */
 public class MainActivity extends AppCompatActivity {
 
     final int SHOW_THE_MAP = 1;
@@ -49,7 +53,6 @@ public class MainActivity extends AppCompatActivity {
 
     final int NOTIFICATION_ID = 1;
 
-
     private Messenger messenger;
     Messenger replyMessenger;
     boolean activityIsBound = false;
@@ -59,23 +62,17 @@ public class MainActivity extends AppCompatActivity {
 
     boolean isTracking = false;
 
-    /**
-     * This collections keep track of all the data points we are plotting
-     */
+    // this collections keep track of all the data points we are plotting
     LineGraphSeries<DataPoint> speedVsTimeSeries;
     LineGraphSeries<DataPoint> altVsTimeSeries;
 
     int broadcastCount = 0;
 
-    /**
-     * Keep track of all the locations that have been received from the GPS service
-     */
+    // keep track of all the locations that have been received from the GPS service
     ArrayList<GoogleMapPos> locations = new ArrayList<>();
     double locationsSpeedTotal = 0;
 
-    /**
-     * If user is moving faster than this there was a bug in the calculation of the speed so don't count it.
-     */
+    // if user is moving faster than this there was a bug in the calculation of the speed so don't count it.
     final double MAX_ALLOWED_SPEED = 200;
 
     double maxSpeed = 0;
@@ -401,9 +398,6 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Get the journey we have selected back from the LoadJourneyActivity
-     * @param requestCode
-     * @param resultCode
-     * @param data
      */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -455,7 +449,7 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Generic method for sending a message to the LocationManagementService using a parcel
-     * @param message
+     * @param message the message to send.
      */
     private void sendMessageToService(Message message){
         ListenerParcel parcel = new ListenerParcel();
